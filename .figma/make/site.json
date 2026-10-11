@@ -1,0 +1,10 @@
+{
+  "description": "This web app streamlines agricultural management for farmers and agronomists, offering real-time monitoring, predictive analytics, and automated alerts to optimize crop yield and resource use.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
