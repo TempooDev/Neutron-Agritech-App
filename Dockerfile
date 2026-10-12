@@ -1,3 +1,4 @@
+# Etapa 1: build
 FROM node:20-alpine AS build
 WORKDIR /app
 RUN corepack enable
@@ -8,4 +9,5 @@ RUN pnpm build
 
 FROM nginx:alpine
 COPY --from=build /app/dist /usr/share/nginx/html
-EXPOSE 8443
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+EXPOSE 80
