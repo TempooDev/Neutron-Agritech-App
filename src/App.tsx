@@ -105,8 +105,13 @@ import {
   SupportAdminView,
 } from "./adminExtras"
 import BackofficeApp from "./backoffice"
+import {
+  experienceFromPath,
+  syncRoute,
+  viewFromPath,
+  type Experience,
+} from "./routing"
 
-type Experience = "field" | "admin" | "backoffice"
 type FieldView = "home" | "alerts" | "actions" | "support"
 type AdminView =
   | "overview"
@@ -1462,7 +1467,10 @@ function FieldApp({
   tickets: SupportTicket[]
   onAddTicket: (ticket: Omit<SupportTicket, "id" | "date" | "status">) => void
 }) {
-  const [view, setView] = useState<FieldView>("home")
+  const [view, setView] = useState<FieldView>(() =>
+    viewFromPath<FieldView>("field"),
+  )
+  useEffect(() => syncRoute("field", view), [view])
   const [selectedAlert, setSelectedAlert] = useState<AlertItem | null>(null)
   const pending = Object.values(resolutions).filter(
     (item) => !item.synced,
@@ -4879,7 +4887,10 @@ function AdminApp({
   onMarkAllNotificationsRead: () => void
   onRefreshTelemetry: () => void
 }) {
-  const [view, setView] = useState<AdminView>("overview")
+  const [view, setView] = useState<AdminView>(() =>
+    viewFromPath<AdminView>("admin"),
+  )
+  useEffect(() => syncRoute("admin", view), [view])
   const [menuOpen, setMenuOpen] = useState(false)
   const [campaign, setCampaign] = useState("Campaña 2025")
   const [targetPlotId, setTargetPlotId] = useState<string | undefined>(
@@ -5044,9 +5055,20 @@ function AdminApp({
    ========================================================================= */
 
 export default function App() {
-  const [experience, setExperience] = useState<Experience>(() =>
-    readStored("verdant-experience", "field"),
+  const [experience, setExperience] = useState<Experience>(
+    () => experienceFromPath() ?? readStored("verdant-experience", "field"),
   )
+  // Navegación atrás/adelante del navegador entre aplicaciones y vistas
+  const [routeKey, setRouteKey] = useState(0)
+  useEffect(() => {
+    const onPop = () => {
+      const fromPath = experienceFromPath()
+      if (fromPath) setExperience(fromPath)
+      setRouteKey((key) => key + 1)
+    }
+    window.addEventListener("popstate", onPop)
+    return () => window.removeEventListener("popstate", onPop)
+  }, [])
   const [online, setOnlineState] = useState(() =>
     readStored("verdant-online", true),
   )
@@ -5625,6 +5647,7 @@ export default function App() {
   if (experience === "backoffice")
     return (
       <BackofficeApp
+        key={routeKey}
         onSwitchAdmin={() => setExperience("admin")}
         onSwitchField={() => setExperience("field")}
         toast={toast}
@@ -5636,6 +5659,7 @@ export default function App() {
 
   return experience === "field" ? (
     <FieldApp
+      key={routeKey}
       online={online}
       setOnline={setOnline}
       plots={plots}
@@ -5650,6 +5674,7 @@ export default function App() {
     />
   ) : (
     <AdminApp
+      key={routeKey}
       onSwitch={() => setExperience("field")}
       onSwitchBackoffice={() => setExperience("backoffice")}
       tickets={tickets}

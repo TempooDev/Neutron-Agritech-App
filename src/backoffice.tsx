@@ -22,7 +22,8 @@ import {
   Wallet,
   X,
 } from "lucide-react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import { syncRoute, viewFromPath } from "./routing"
 import type { SupportTicket } from "./data"
 import {
   initialBackofficeTickets,
@@ -1035,7 +1036,10 @@ export default function BackofficeApp({
   clientTickets: SupportTicket[]
   onReplyClientTicket: (id: string, text: string, close: boolean) => void
 }) {
-  const [view, setView] = useState<BackofficeView>("crm")
+  const [view, setView] = useState<BackofficeView>(() =>
+    viewFromPath<BackofficeView>("backoffice"),
+  )
+  useEffect(() => syncRoute("backoffice", view), [view])
   const [menuOpen, setMenuOpen] = useState(false)
   const current = backofficeNav.flatMap((g) => g.items).find((i) => i.id === view)
 
