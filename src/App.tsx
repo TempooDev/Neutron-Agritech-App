@@ -7,6 +7,7 @@ import {
   BarChart3,
   BatteryMedium,
   Bell,
+  Building2,
   Bot,
   Check,
   CheckCircle2,
@@ -25,6 +26,8 @@ import {
   Home,
   Layers3,
   Leaf,
+  Lightbulb,
+  Link2,
   Map,
   Menu,
   MoreHorizontal,
@@ -73,20 +76,58 @@ import {
   type SystemNotification,
   type UserItem,
 } from "./data"
+import {
+  AdminModal,
+  AdminPageHeading,
+  Badge,
+  Button,
+  Input,
+  KpiCard,
+  Logo,
+  Select,
+  Textarea,
+  Toast,
+  TrendChart,
+  readStored,
+  type ToastState,
+} from "./ui"
+import {
+  initialActuations,
+  initialErpDatasets,
+  type ActuationLog,
+  type ErpDataset,
+  type Resolution,
+} from "./extraData"
+import {
+  ActuationsView,
+  ApiErpView,
+  RecommendationsView,
+  SupportAdminView,
+} from "./adminExtras"
+import BackofficeApp from "./backoffice"
+import {
+  experienceFromPath,
+  syncRoute,
+  viewFromPath,
+  type Experience,
+} from "./routing"
 
-type Experience = "field" | "admin"
 type FieldView = "home" | "alerts" | "actions" | "support"
-type AdminView = "overview" | "farms" | "users" | "devices" | "rules" | "analytics" | "reports" | "integrations"
+type AdminView =
+  | "overview"
+  | "farms"
+  | "recommendations"
+  | "actuations"
+  | "users"
+  | "devices"
+  | "rules"
+  | "analytics"
+  | "reports"
+  | "integrations"
+  | "api"
+  | "support"
 
-type Resolution = {
-  status: "accepted" | "rejected"
-  reason?: string
-  note?: string
-  synced: boolean
-  date: string
-}
 
-type ToastState = { title: string; detail?: string } | null
 
 type SecurityLimits = {
   maxTimePerSector: number
@@ -99,151 +140,6 @@ const severityLabels: Record<Severity, string> = {
   warning: "Atención",
   info: "Informativa",
   success: "Estable",
-}
-
-function readStored<T>(key: string, fallback: T): T {
-  try {
-    const stored = window.localStorage.getItem(key)
-    return stored ? JSON.parse(stored) as T : fallback
-  } catch {
-    return fallback
-  }
-}
-
-function Button({
-  children,
-  className = "",
-  variant = "primary",
-  ...props
-}: React.ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: "primary" | "secondary" | "ghost" | "danger"
-}) {
-  return (
-    <button className={`btn btn-${variant} ${className}`} {...props}>
-      {children}
-    </button>
-  )
-}
-
-function Input(props: React.InputHTMLAttributes<HTMLInputElement>) {
-  return <input className="input" {...props} />
-}
-
-function Select(props: React.SelectHTMLAttributes<HTMLSelectElement>) {
-  return <select className="input select" {...props} />
-}
-
-function Textarea(props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
-  return <textarea className="input textarea" {...props} />
-}
-
-function Logo({ compact = false }: { compact?: boolean }) {
-  return (
-    <div className="logo-wrap">
-      <div className="logo-mark">
-        <Leaf size={compact ? 18 : 21} strokeWidth={2.4} />
-      </div>
-      {!compact && (
-        <div>
-          <div className="logo-name">Neutron</div>
-          <div className="logo-sub">AgriTech</div>
-        </div>
-      )}
-    </div>
-  )
-}
-
-function Badge({
-  tone = "neutral",
-  children,
-}: {
-  tone?: Severity | "neutral" | "offline"
-  children: ReactNode
-}) {
-  return <span className={`badge badge-${tone}`}>{children}</span>
-}
-
-function TrendChart({
-  values,
-  color = "green",
-  height = 84,
-  showArea = true,
-}: {
-  values: number[]
-  color?: "green" | "amber" | "red" | "blue"
-  height?: number
-  showArea?: boolean
-}) {
-  const width = 300
-  const min = Math.min(...values) - 4
-  const max = Math.max(...values) + 4
-  const points = values
-    .map((value, index) => {
-      const x = (index / (values.length - 1)) * width
-      const y = height - ((value - min) / (max - min)) * (height - 12) - 6
-      return `${x},${y}`
-    })
-    .join(" ")
-  return (
-    <svg
-      className={`trend-chart chart-${color}`}
-      viewBox={`0 0 ${width} ${height}`}
-      preserveAspectRatio="none"
-      aria-label="Gráfica de evolución"
-    >
-      {[0.25, 0.5, 0.75].map((y) => (
-        <line
-          key={y}
-          x1="0"
-          x2={width}
-          y1={height * y}
-          y2={height * y}
-          className="chart-grid"
-        />
-      ))}
-      {showArea && (
-        <polygon
-          points={`0,${height} ${points} ${width},${height}`}
-          className="chart-area"
-        />
-      )}
-      <polyline points={points} className="chart-line" />
-      <circle
-        cx={width}
-        cy={points.split(" ").at(-1)?.split(",")[1]}
-        r="4"
-        className="chart-dot"
-      />
-    </svg>
-  )
-}
-
-function Toast({ toast, onClose }: { toast: ToastState; onClose: () => void }) {
-  useEffect(() => {
-    if (!toast) return
-    const timer = window.setTimeout(onClose, 3600)
-    return () => window.clearTimeout(timer)
-  }, [toast, onClose])
-  if (!toast) return null
-  return (
-    <div className="toast" role="status">
-      <div className="toast-icon">
-        <Check size={16} />
-      </div>
-      <div className="toast-copy">
-        <strong>{toast.title}</strong>
-        {toast.detail && <span>{toast.detail}</span>}
-      </div>
-      <Button
-        variant="ghost"
-        className="icon-button mini"
-        aria-label="Cerrar aviso"
-        onClick={onClose}
-      >
-        <X size={16} />
-      </Button>
-    </div>
-  )
 }
 
 function ExperienceSwitch({
@@ -271,37 +167,6 @@ function ExperienceSwitch({
       >
         <BarChart3 size={16} /> {!compact && "Administración"}
       </Button>
-    </div>
-  )
-}
-
-function AdminModal({
-  title,
-  subtitle,
-  onClose,
-  children,
-  className = "",
-}: {
-  title: string
-  subtitle: string
-  onClose: () => void
-  children: ReactNode
-  className?: string
-}) {
-  return (
-    <div className="modal-backdrop admin-modal-backdrop">
-      <div className={`admin-modal ${className}`}>
-        <div className="modal-title">
-          <div>
-            <span className="display-title small-title">{title}</span>
-            <p>{subtitle}</p>
-          </div>
-          <Button variant="ghost" className="icon-button" onClick={onClose}>
-            <X />
-          </Button>
-        </div>
-        {children}
-      </div>
     </div>
   )
 }
@@ -1602,7 +1467,10 @@ function FieldApp({
   tickets: SupportTicket[]
   onAddTicket: (ticket: Omit<SupportTicket, "id" | "date" | "status">) => void
 }) {
-  const [view, setView] = useState<FieldView>("home")
+  const [view, setView] = useState<FieldView>(() =>
+    viewFromPath<FieldView>("field"),
+  )
+  useEffect(() => syncRoute("field", view), [view])
   const [selectedAlert, setSelectedAlert] = useState<AlertItem | null>(null)
   const pending = Object.values(resolutions).filter(
     (item) => !item.synced,
@@ -1689,6 +1557,8 @@ const adminNav: {
     items: [
       { id: "overview", label: "Gemelo digital", icon: Layers3 },
       { id: "farms", label: "Explotaciones", icon: Tractor },
+      { id: "recommendations", label: "Recomendaciones", icon: Lightbulb },
+      { id: "actuations", label: "Actuaciones", icon: Droplets },
     ],
   },
   {
@@ -1709,7 +1579,12 @@ const adminNav: {
       { id: "analytics", label: "Modelos predictivos", icon: TrendingUp },
       { id: "reports", label: "Informes", icon: FileBarChart },
       { id: "integrations", label: "Integraciones", icon: Zap },
+      { id: "api", label: "API y ERP", icon: Link2 },
     ],
+  },
+  {
+    group: "AYUDA",
+    items: [{ id: "support", label: "Soporte", icon: Headphones }],
   },
 ]
 
@@ -1717,6 +1592,7 @@ function AdminSidebar({
   view,
   onChange,
   onSwitch,
+  onSwitchBackoffice,
   open,
   onClose,
   devicesCount,
@@ -1725,6 +1601,7 @@ function AdminSidebar({
   view: AdminView
   onChange: (view: AdminView) => void
   onSwitch: () => void
+  onSwitchBackoffice: () => void
   open: boolean
   onClose: () => void
   devicesCount: number
@@ -1788,6 +1665,9 @@ function AdminSidebar({
         <Button variant="ghost" onClick={onSwitch}>
           <Smartphone size={18} /> Abrir experiencia Campo{" "}
           <ArrowRight size={15} />
+        </Button>
+        <Button variant="ghost" onClick={onSwitchBackoffice}>
+          <Building2 size={18} /> Back-office NEUTRON <ArrowRight size={15} />
         </Button>
         <div
           className="sidebar-user"
@@ -2112,31 +1992,6 @@ function AdminTopbar({
         </div>
       </div>
     </header>
-  )
-}
-
-function KpiCard({
-  icon,
-  label,
-  value,
-  delta,
-  tone = "green",
-}: {
-  icon: ReactNode
-  label: string
-  value: string
-  delta: string
-  tone?: string
-}) {
-  return (
-    <div className="admin-kpi">
-      <div className={`kpi-icon ${tone}`}>{icon}</div>
-      <div>
-        <span>{label}</span>
-        <strong>{value}</strong>
-        <small>{delta}</small>
-      </div>
-    </div>
   )
 }
 
@@ -2566,26 +2421,6 @@ function Overview({
   )
 }
 
-function AdminPageHeading({
-  title,
-  subtitle,
-  action,
-}: {
-  title: string
-  subtitle: string
-  action?: ReactNode
-}) {
-  return (
-    <div className="admin-page-heading">
-      <div>
-        <span className="admin-title">{title}</span>
-        <p>{subtitle}</p>
-      </div>
-      {action && <div>{action}</div>}
-    </div>
-  )
-}
-
 function FarmsView({
   plots,
   selectedPlotId,
@@ -2689,16 +2524,18 @@ function FarmsView({
             {farmsList.map((farm) => (
               <div className="tree-farm" key={farm}>
                 <div className="tree-branch" />
-                <ChevronDown size={16} />
-                <div className="tree-icon">
-                  <Tractor />
-                </div>
-                <div>
-                  <strong>{farm}</strong>
-                  <span>
-                    {plots.filter((item) => item.owner === farm).length}{" "}
-                    parcelas
-                  </span>
+                <div className="tree-farm-head">
+                  <ChevronDown size={16} />
+                  <div className="tree-icon">
+                    <Tractor />
+                  </div>
+                  <div className="tree-label">
+                    <strong>{farm}</strong>
+                    <span>
+                      {plots.filter((item) => item.owner === farm).length}{" "}
+                      parcelas
+                    </span>
+                  </div>
                 </div>
                 <div className="tree-plots">
                   {plots
@@ -4950,6 +4787,15 @@ function IntegrationsView({
 
 function AdminApp({
   onSwitch,
+  onSwitchBackoffice,
+  tickets,
+  onAddTicket,
+  actuations,
+  onManualIrrigation,
+  onResolve,
+  erpDatasets,
+  onToggleErpDataset,
+  onSendErp,
   toast,
   setToast,
   plots,
@@ -4989,6 +4835,20 @@ function AdminApp({
   onRefreshTelemetry,
 }: {
   onSwitch: () => void
+  onSwitchBackoffice: () => void
+  tickets: SupportTicket[]
+  onAddTicket: (ticket: Omit<SupportTicket, "id" | "date" | "status">) => void
+  actuations: ActuationLog[]
+  onManualIrrigation: (plotId: string, minutes: number) => void
+  onResolve: (
+    alert: AlertItem,
+    status: "accepted" | "rejected",
+    reason?: string,
+    note?: string,
+  ) => void
+  erpDatasets: ErpDataset[]
+  onToggleErpDataset: (id: string) => void
+  onSendErp: () => void
   toast: ToastState
   setToast: (toast: ToastState) => void
   plots: Plot[]
@@ -5029,7 +4889,10 @@ function AdminApp({
   onMarkAllNotificationsRead: () => void
   onRefreshTelemetry: () => void
 }) {
-  const [view, setView] = useState<AdminView>("overview")
+  const [view, setView] = useState<AdminView>(() =>
+    viewFromPath<AdminView>("admin"),
+  )
+  useEffect(() => syncRoute("admin", view), [view])
   const [menuOpen, setMenuOpen] = useState(false)
   const [campaign, setCampaign] = useState("Campaña 2025")
   const [targetPlotId, setTargetPlotId] = useState<string | undefined>(
@@ -5047,6 +4910,7 @@ function AdminApp({
         view={view}
         onChange={setView}
         onSwitch={onSwitch}
+        onSwitchBackoffice={onSwitchBackoffice}
         open={menuOpen}
         onClose={() => setMenuOpen(false)}
         devicesCount={devices.filter((d) => d.status !== "Conectado").length}
@@ -5130,6 +4994,39 @@ function AdminApp({
               onToast={setToast}
             />
           )}
+          {view === "recommendations" && (
+            <RecommendationsView
+              plots={plots}
+              alerts={alerts}
+              resolutions={resolutions}
+              onResolve={onResolve}
+              onToast={setToast}
+            />
+          )}
+          {view === "actuations" && (
+            <ActuationsView
+              actuations={actuations}
+              plots={plots}
+              automation={automation}
+              onToggleAutomation={onToggleAutomation}
+              onManualIrrigation={onManualIrrigation}
+            />
+          )}
+          {view === "api" && (
+            <ApiErpView
+              datasets={erpDatasets}
+              onToggleDataset={onToggleErpDataset}
+              onSendNow={onSendErp}
+              onToast={setToast}
+            />
+          )}
+          {view === "support" && (
+            <SupportAdminView
+              tickets={tickets}
+              onAddTicket={onAddTicket}
+              onToast={setToast}
+            />
+          )}
           {view === "analytics" && <AnalyticsView onToast={setToast} />}
           {view === "reports" && (
             <ReportsView
@@ -5160,9 +5057,20 @@ function AdminApp({
    ========================================================================= */
 
 export default function App() {
-  const [experience, setExperience] = useState<Experience>(() =>
-    readStored("verdant-experience", "field"),
+  const [experience, setExperience] = useState<Experience>(
+    () => experienceFromPath() ?? readStored("verdant-experience", "field"),
   )
+  // Navegación atrás/adelante del navegador entre aplicaciones y vistas
+  const [routeKey, setRouteKey] = useState(0)
+  useEffect(() => {
+    const onPop = () => {
+      const fromPath = experienceFromPath()
+      if (fromPath) setExperience(fromPath)
+      setRouteKey((key) => key + 1)
+    }
+    window.addEventListener("popstate", onPop)
+    return () => window.removeEventListener("popstate", onPop)
+  }, [])
   const [online, setOnlineState] = useState(() =>
     readStored("verdant-online", true),
   )
@@ -5213,6 +5121,12 @@ export default function App() {
     }),
   )
 
+  const [actuations, setActuations] = useState<ActuationLog[]>(() =>
+    readStored("verdant-actuations", initialActuations),
+  )
+  const [erpDatasets, setErpDatasets] = useState<ErpDataset[]>(() =>
+    readStored("verdant-erp-datasets", initialErpDatasets),
+  )
   const [toast, setToast] = useState<ToastState>(null)
 
   // LocalStorage synchronizers
@@ -5249,6 +5163,15 @@ export default function App() {
   useEffect(() => {
     window.localStorage.setItem("verdant-tickets", JSON.stringify(tickets))
   }, [tickets])
+  useEffect(() => {
+    window.localStorage.setItem("verdant-actuations", JSON.stringify(actuations))
+  }, [actuations])
+  useEffect(() => {
+    window.localStorage.setItem(
+      "verdant-erp-datasets",
+      JSON.stringify(erpDatasets),
+    )
+  }, [erpDatasets])
   useEffect(() => {
     window.localStorage.setItem(
       "verdant-assistance",
@@ -5331,6 +5254,14 @@ export default function App() {
 
     // If accepted and is Riego, improve the plot moisture and trend!
     if (status === "accepted" && alert.category === "Riego") {
+      logActuation({
+        plot: plots.find((p) => p.id === alert.plotId)?.name ?? alert.plotId,
+        action: alert.recommendation,
+        origin: "Recomendación aceptada",
+        requestedBy: experience === "field" ? "Antonio Pérez (Campo)" : "Elena Ruiz (Responsable agronómica)",
+        result: "En curso",
+        detail: online ? undefined : "Pendiente de sincronizar desde el móvil.",
+      })
       setPlots((currentPlots) =>
         currentPlots.map((p) => {
           if (p.id === alert.plotId) {
@@ -5401,7 +5332,28 @@ export default function App() {
     })
   }
 
+  const logActuation = (entry: Omit<ActuationLog, "id" | "date">) => {
+    setActuations((items) => [
+      {
+        ...entry,
+        id: `act-${109 + items.length - initialActuations.length}`,
+        date: "Ahora",
+      },
+      ...items,
+    ])
+  }
+
   const triggerIrrigation = (plotId: string, durationMinutes: number) => {
+    logActuation({
+      plot: plots.find((p) => p.id === plotId)?.name ?? plotId,
+      action: `Riego manual · ${durationMinutes} min`,
+      origin: "Manual",
+      requestedBy: "Elena Ruiz (Responsable agronómica)",
+      result: "Confirmada",
+      detail: automation
+        ? "Orden manual con prioridad sobre la automatización activa."
+        : undefined,
+    })
     setPlots((items) =>
       items.map((p) => {
         if (p.id === plotId) {
@@ -5563,6 +5515,39 @@ export default function App() {
     ])
   }
 
+  const replyClientTicket = (id: string, text: string, close: boolean) => {
+    setTickets((items) =>
+      items.map((t) =>
+        t.id === id
+          ? {
+              ...t,
+              status: close ? "Resuelto" : "En revisión",
+              replies: [
+                ...(t.replies ?? []),
+                { from: "Soporte NEUTRON", text, time: "Ahora" },
+              ],
+            }
+          : t,
+      ),
+    )
+  }
+
+  const toggleErpDataset = (id: string) => {
+    setErpDatasets((items) =>
+      items.map((d) => (d.id === id ? { ...d, enabled: !d.enabled } : d)),
+    )
+  }
+
+  const sendErpNow = () => {
+    setErpDatasets((items) =>
+      items.map((d) => (d.enabled ? { ...d, lastSent: "Ahora" } : d)),
+    )
+    setToast({
+      title: "Datos enviados al ERP",
+      detail: `${erpDatasets.filter((d) => d.enabled).length} conjuntos de datos compartidos.`,
+    })
+  }
+
   const addAssistanceRequest = (
     req: Omit<AssistanceRequest, "id" | "date" | "status">,
   ) => {
@@ -5661,8 +5646,22 @@ export default function App() {
     })
   }
 
+  if (experience === "backoffice")
+    return (
+      <BackofficeApp
+        key={routeKey}
+        onSwitchAdmin={() => setExperience("admin")}
+        onSwitchField={() => setExperience("field")}
+        toast={toast}
+        setToast={setToast}
+        clientTickets={tickets}
+        onReplyClientTicket={replyClientTicket}
+      />
+    )
+
   return experience === "field" ? (
     <FieldApp
+      key={routeKey}
       online={online}
       setOnline={setOnline}
       plots={plots}
@@ -5677,7 +5676,17 @@ export default function App() {
     />
   ) : (
     <AdminApp
+      key={routeKey}
       onSwitch={() => setExperience("field")}
+      onSwitchBackoffice={() => setExperience("backoffice")}
+      tickets={tickets}
+      onAddTicket={addTicket}
+      actuations={actuations}
+      onManualIrrigation={triggerIrrigation}
+      onResolve={resolveAlert}
+      erpDatasets={erpDatasets}
+      onToggleErpDataset={toggleErpDataset}
+      onSendErp={sendErpNow}
       toast={toast}
       setToast={setToast}
       plots={plots}
