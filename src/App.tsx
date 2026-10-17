@@ -2524,16 +2524,18 @@ function FarmsView({
             {farmsList.map((farm) => (
               <div className="tree-farm" key={farm}>
                 <div className="tree-branch" />
-                <ChevronDown size={16} />
-                <div className="tree-icon">
-                  <Tractor />
-                </div>
-                <div>
-                  <strong>{farm}</strong>
-                  <span>
-                    {plots.filter((item) => item.owner === farm).length}{" "}
-                    parcelas
-                  </span>
+                <div className="tree-farm-head">
+                  <ChevronDown size={16} />
+                  <div className="tree-icon">
+                    <Tractor />
+                  </div>
+                  <div className="tree-label">
+                    <strong>{farm}</strong>
+                    <span>
+                      {plots.filter((item) => item.owner === farm).length}{" "}
+                      parcelas
+                    </span>
+                  </div>
                 </div>
                 <div className="tree-plots">
                   {plots
