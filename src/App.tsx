@@ -52,7 +52,9 @@ import {
   XCircle,
   Zap,
 } from "lucide-react"
+
 import { ReactNode, useEffect, useState } from "react"
+
 import {
   alerts as initialAlerts,
   devices as initialDevices,
@@ -76,6 +78,7 @@ import {
   type SystemNotification,
   type UserItem,
 } from "./data"
+
 import {
   AdminModal,
   AdminPageHeading,
@@ -91,6 +94,7 @@ import {
   readStored,
   type ToastState,
 } from "./ui"
+
 import {
   initialActuations,
   initialErpDatasets,
@@ -98,13 +102,18 @@ import {
   type ErpDataset,
   type Resolution,
 } from "./extraData"
+
 import {
   ActuationsView,
   ApiErpView,
   RecommendationsView,
   SupportAdminView,
 } from "./adminExtras"
+
 import BackofficeApp from "./backoffice"
+
+import { downloadReport, reportFileName } from "./reportExport"
+
 import {
   experienceFromPath,
   syncRoute,
@@ -113,42 +122,38 @@ import {
 } from "./routing"
 
 type FieldView = "home" | "alerts" | "actions" | "support"
-type AdminView =
-  | "overview"
-  | "farms"
-  | "recommendations"
-  | "actuations"
-  | "users"
-  | "devices"
-  | "rules"
-  | "analytics"
-  | "reports"
-  | "integrations"
-  | "api"
-  | "support"
 
-
+type AdminView = "overview" | "farms" | "recommendations" | "actuations" | "users" | "devices" | "rules" | "analytics" | "reports" | "integrations" | "api" | "support"
 
 type SecurityLimits = {
   maxTimePerSector: number
+
   minPauseHours: number
+
   maxFlowRate: number
 }
 
 const severityLabels: Record<Severity, string> = {
   critical: "Crítica",
+
   warning: "Atención",
+
   info: "Informativa",
+
   success: "Estable",
 }
 
 function ExperienceSwitch({
   value,
+
   onChange,
+
   compact = false,
 }: {
   value: Experience
+
   onChange: (value: Experience) => void
+
   compact?: boolean
 }) {
   return (
@@ -177,13 +182,19 @@ function ExperienceSwitch({
 
 function FieldHeader({
   online,
+
   onToggleOnline,
+
   pending,
+
   onSwitch,
 }: {
   online: boolean
+
   onToggleOnline: () => void
+
   pending: number
+
   onSwitch: () => void
 }) {
   return (
@@ -225,23 +236,32 @@ function FieldHeader({
 
 function FieldNav({
   current,
+
   onChange,
+
   unreadAlertsCount,
 }: {
   current: FieldView
+
   onChange: (view: FieldView) => void
+
   unreadAlertsCount: number
 }) {
-  const items: { id: FieldView; label: string; icon: typeof Home }[] = [
+  const items: { id: FieldView label: string icon: typeof Home }[] = [
     { id: "home", label: "Inicio", icon: Home },
+
     { id: "alerts", label: "Alertas", icon: Bell },
+
     { id: "actions", label: "Actuaciones", icon: TicketCheck },
+
     { id: "support", label: "Soporte", icon: Headphones },
   ]
+
   return (
     <nav className="field-nav">
       {items.map((item) => {
         const Icon = item.icon
+
         return (
           <Button
             key={item.id}
@@ -263,22 +283,33 @@ function FieldNav({
 
 function FieldHome({
   plots,
+
   alerts,
+
   resolutions,
+
   onViewAlert,
+
   onSelectPlot,
 }: {
   plots: Plot[]
+
   alerts: AlertItem[]
+
   resolutions: Record<string, Resolution>
+
   onViewAlert: (alert: AlertItem) => void
+
   onSelectPlot: (plotId: string) => void
 }) {
   const [selectedId, setSelectedId] = useState(plots[0]?.id || "p1")
+
   const [period, setPeriod] = useState("7 días")
+
   const selected = plots.find((plot) => plot.id === selectedId) ?? plots[0]
 
   // Find priority alert for selected plot or first unresolved critical alert
+
   const plotAlert =
     alerts.find(
       (a) =>
@@ -319,6 +350,7 @@ function FieldHome({
           value={selectedId}
           onChange={(event) => {
             setSelectedId(event.target.value)
+
             onSelectPlot(event.target.value)
           }}
           aria-label="Seleccionar parcela"
@@ -485,6 +517,7 @@ function FieldHome({
             className={`plot-row ${selectedId === plot.id ? "selected" : ""}`}
             onClick={() => {
               setSelectedId(plot.id)
+
               onSelectPlot(plot.id)
             }}
           >
@@ -509,17 +542,25 @@ function FieldHome({
 
 function AlertList({
   alerts,
+
   plots,
+
   resolutions,
+
   onSelect,
 }: {
   alerts: AlertItem[]
+
   plots: Plot[]
+
   resolutions: Record<string, Resolution>
+
   onSelect: (alert: AlertItem) => void
 }) {
   const [filter, setFilter] = useState("Todas")
+
   const [categoryFilter, setCategoryFilter] = useState("Todas")
+
   const [showFilterModal, setShowFilterModal] = useState(false)
 
   const visible = alerts.filter((alert) => {
@@ -535,7 +576,9 @@ function AlertList({
   })
 
   const criticalCount = alerts.filter((a) => a.severity === "critical").length
+
   const warningCount = alerts.filter((a) => a.severity === "warning").length
+
   const infoCount = alerts.filter((a) => a.severity === "info").length
 
   return (
@@ -588,8 +631,11 @@ function AlertList({
         <div
           style={{
             display: "flex",
+
             alignItems: "center",
+
             gap: 8,
+
             marginBottom: 12,
           }}
         >
@@ -607,7 +653,9 @@ function AlertList({
       <div className="alert-list">
         {visible.map((alert) => {
           const plot = plots.find((item) => item.id === alert.plotId)
+
           const resolution = resolutions[alert.id]
+
           return (
             <Button
               key={alert.id}
@@ -685,6 +733,7 @@ function AlertList({
                     variant={categoryFilter === cat ? "primary" : "secondary"}
                     onClick={() => {
                       setCategoryFilter(cat)
+
                       setShowFilterModal(false)
                     }}
                     style={{ width: "100%", justifyContent: "flex-start" }}
@@ -707,19 +756,29 @@ function AlertList({
 
 function ActionsView({
   alerts,
+
   plots,
+
   resolutions,
+
   onOpen,
 }: {
   alerts: AlertItem[]
+
   plots: Plot[]
+
   resolutions: Record<string, Resolution>
+
   onOpen: (alert: AlertItem) => void
 }) {
   const [tab, setTab] = useState("Pendientes")
+
   const pending = alerts.filter((alert) => !resolutions[alert.id])
+
   const done = alerts.filter((alert) => resolutions[alert.id])
+
   const unsynced = done.filter((alert) => !resolutions[alert.id].synced)
+
   const list =
     tab === "Pendientes" ? pending : tab === "Registradas" ? done : unsynced
 
@@ -734,7 +793,9 @@ function ActionsView({
       <div className="segmented field-filters">
         {[
           ["Pendientes", pending.length],
+
           ["Registradas", done.length],
+
           ["Por sincronizar", unsynced.length],
         ].map(([label, count]) => (
           <Button
@@ -751,6 +812,7 @@ function ActionsView({
         <div className="work-list">
           {list.map((alert) => {
             const resolution = resolutions[alert.id]
+
             return (
               <Button
                 key={alert.id}
@@ -813,39 +875,59 @@ function ActionsView({
 
 function SupportView({
   online,
+
   tickets,
+
   onAddTicket,
+
   onToast,
 }: {
   online: boolean
+
   tickets: SupportTicket[]
+
   onAddTicket: (ticket: Omit<SupportTicket, "id" | "date" | "status">) => void
+
   onToast: (toast: ToastState) => void
 }) {
   const [showForm, setShowForm] = useState(false)
+
   const [showGuides, setShowGuides] = useState(false)
+
   const [showServiceStatus, setShowServiceStatus] = useState(false)
+
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null)
+
   const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(
     null,
   )
 
   const [category, setCategory] = useState("Dispositivo o sensor")
+
   const [subject, setSubject] = useState("")
+
   const [description, setDescription] = useState("")
 
   const submit = (event: React.FormEvent) => {
     event.preventDefault()
+
     onAddTicket({
       subject,
+
       category,
+
       description,
     })
+
     setShowForm(false)
+
     setSubject("")
+
     setDescription("")
+
     onToast({
       title: online ? "Ticket creado" : "Ticket guardado sin conexión",
+
       detail: online
         ? "El equipo de soporte ya puede revisarlo."
         : "Se enviará automáticamente al recuperar cobertura.",
@@ -855,18 +937,25 @@ function SupportView({
   const faqs = [
     {
       q: "¿Cómo calibro una sonda de humedad?",
+
       a: "Para calibrar la sonda HUM, debes sumergir la punta sensible en una muestra de suelo saturado al 100% (capacidad de campo) durante 15 minutos, y registrar el valor cero desde la pestaña de Dispositivos o solicitar asistencia al soporte técnico.",
     },
+
     {
       q: "¿Qué ocurre con mis datos sin cobertura?",
+
       a: "Neutron AgriTech almacena localmente en la memoria de tu dispositivo todas las órdenes de riego, notas de campo y aceptaciones. En cuanto el teléfono detecta señal Wi-Fi o datos móviles, la sincronización se realiza automáticamente sin perder trazabilidad.",
     },
+
     {
       q: "¿Cómo cambio de parcela en modo Campo?",
+
       a: "En la pantalla de Inicio de Campo, utiliza el selector desplegable superior o haz clic en cualquiera de las tarjetas de parcela situadas en la parte inferior para ver su curva de humedad y recomendaciones específicas.",
     },
+
     {
       q: "¿Cómo se activan los riegos automáticos?",
+
       a: "El responsable de riego puede autorizar la automatización en el panel de Administración > Reglas y automatización. Mientras no esté autorizada, el sistema requiere confirmación previa en campo para cualquier riego.",
     },
   ]
@@ -963,6 +1052,7 @@ function SupportView({
                   style={{
                     transform:
                       expandedFaq === index ? "rotate(180deg)" : "none",
+
                     transition: "transform 150ms ease",
                   }}
                 />
@@ -1063,7 +1153,9 @@ function SupportView({
               <span
                 style={{
                   fontSize: 10,
+
                   color: "var(--muted)",
+
                   marginLeft: "auto",
                 }}
               >
@@ -1081,8 +1173,11 @@ function SupportView({
               <p
                 style={{
                   margin: 0,
+
                   fontSize: 11,
+
                   color: "var(--ink)",
+
                   lineHeight: 1.5,
                 }}
               >
@@ -1095,15 +1190,20 @@ function SupportView({
                 key={i}
                 style={{
                   background: "var(--green-50)",
+
                   border: "1px solid #cfe4d4",
+
                   padding: 12,
+
                   borderRadius: 10,
                 }}
               >
                 <div
                   style={{
                     display: "flex",
+
                     justifyContent: "space-between",
+
                     marginBottom: 4,
                   }}
                 >
@@ -1126,8 +1226,10 @@ function SupportView({
               onClick={() => {
                 onToast({
                   title: "Mensaje registrado",
+
                   detail: "Tu respuesta se ha adjuntado al ticket.",
                 })
+
                 setSelectedTicket(null)
               }}
             >
@@ -1166,8 +1268,11 @@ function SupportView({
                   <p
                     style={{
                       margin: 0,
+
                       fontSize: 10,
+
                       color: "var(--muted)",
+
                       marginTop: 2,
                     }}
                   >
@@ -1186,8 +1291,11 @@ function SupportView({
                   <p
                     style={{
                       margin: 0,
+
                       fontSize: 10,
+
                       color: "var(--muted)",
+
                       marginTop: 2,
                     }}
                   >
@@ -1205,8 +1313,11 @@ function SupportView({
                   <p
                     style={{
                       margin: 0,
+
                       fontSize: 10,
+
                       color: "var(--muted)",
+
                       marginTop: 2,
                     }}
                   >
@@ -1295,22 +1406,33 @@ function SupportView({
 
 function AlertDetail({
   alert,
+
   plots,
+
   onClose,
+
   onResolve,
 }: {
   alert: AlertItem
+
   plots: Plot[]
+
   onClose: () => void
+
   onResolve: (
     status: "accepted" | "rejected",
+
     reason?: string,
+
     note?: string,
   ) => void
 }) {
   const [rejecting, setRejecting] = useState(false)
+
   const [reason, setReason] = useState("Condiciones inadecuadas")
+
   const [fieldNote, setFieldNote] = useState("")
+
   const plot = plots.find((item) => item.id === alert.plotId)
 
   return (
@@ -1399,8 +1521,11 @@ function AlertDetail({
             <div className="reason-grid">
               {[
                 "No aplica",
+
                 "Ya realizada",
+
                 "Condiciones inadecuadas",
+
                 "Otro",
               ].map((item) => (
                 <Button
@@ -1439,42 +1564,69 @@ function AlertDetail({
 
 function FieldApp({
   online,
+
   setOnline,
+
   plots,
+
   alerts,
+
   resolutions,
+
   onResolve,
+
   onSwitch,
+
   toast,
+
   setToast,
+
   tickets,
+
   onAddTicket,
 }: {
   online: boolean
+
   setOnline: (online: boolean) => void
+
   plots: Plot[]
+
   alerts: AlertItem[]
+
   resolutions: Record<string, Resolution>
+
   onResolve: (
     alert: AlertItem,
+
     status: "accepted" | "rejected",
+
     reason?: string,
+
     note?: string,
   ) => void
+
   onSwitch: () => void
+
   toast: ToastState
+
   setToast: (toast: ToastState) => void
+
   tickets: SupportTicket[]
+
   onAddTicket: (ticket: Omit<SupportTicket, "id" | "date" | "status">) => void
 }) {
   const [view, setView] = useState<FieldView>(() =>
     viewFromPath<FieldView>("field"),
   )
+
   useEffect(() => syncRoute("field", view), [view])
+
   const [selectedAlert, setSelectedAlert] = useState<AlertItem | null>(null)
+
   const pending = Object.values(resolutions).filter(
     (item) => !item.synced,
   ).length
+
   const unreadAlerts = alerts.filter((a) => !resolutions[a.id]).length
 
   return (
@@ -1534,7 +1686,9 @@ function FieldApp({
           onClose={() => setSelectedAlert(null)}
           onResolve={(status, reason, note) => {
             onResolve(selectedAlert, status, reason, note)
+
             setSelectedAlert(null)
+
             setView("actions")
           }}
         />
@@ -1550,61 +1704,93 @@ function FieldApp({
 
 const adminNav: {
   group: string
-  items: { id: AdminView; label: string; icon: typeof Home }[]
+
+  items: { id: AdminView label: string icon: typeof Home }[]
 }[] = [
   {
     group: "OPERACIONES",
+
     items: [
       { id: "overview", label: "Gemelo digital", icon: Layers3 },
+
       { id: "farms", label: "Explotaciones", icon: Tractor },
+
       { id: "recommendations", label: "Recomendaciones", icon: Lightbulb },
+
       { id: "actuations", label: "Actuaciones", icon: Droplets },
     ],
   },
+
   {
     group: "GESTIÓN",
+
     items: [
       { id: "users", label: "Clientes y usuarios", icon: UsersRound },
+
       { id: "devices", label: "Dispositivos IoT", icon: Radio },
+
       {
         id: "rules",
+
         label: "Reglas y automatización",
+
         icon: SlidersHorizontal,
       },
     ],
   },
+
   {
     group: "INTELIGENCIA",
+
     items: [
       { id: "analytics", label: "Modelos predictivos", icon: TrendingUp },
+
       { id: "reports", label: "Informes", icon: FileBarChart },
+
       { id: "integrations", label: "Integraciones", icon: Zap },
+
       { id: "api", label: "API y ERP", icon: Link2 },
     ],
   },
+
   {
     group: "AYUDA",
+
     items: [{ id: "support", label: "Soporte", icon: Headphones }],
   },
 ]
 
 function AdminSidebar({
   view,
+
   onChange,
+
   onSwitch,
+
   onSwitchBackoffice,
+
   open,
+
   onClose,
+
   devicesCount,
+
   onToast,
 }: {
   view: AdminView
+
   onChange: (view: AdminView) => void
+
   onSwitch: () => void
+
   onSwitchBackoffice: () => void
+
   open: boolean
+
   onClose: () => void
+
   devicesCount: number
+
   onToast: (toast: ToastState) => void
 }) {
   return (
@@ -1625,6 +1811,7 @@ function AdminSidebar({
         onClick={() =>
           onToast({
             title: "Cooperativa Valle Verde",
+
             detail: "22,2 ha monitorizadas · 2 explotaciones activas.",
           })
         }
@@ -1642,6 +1829,7 @@ function AdminSidebar({
             <span>{group.group}</span>
             {group.items.map((item) => {
               const Icon = item.icon
+
               return (
                 <Button
                   key={item.id}
@@ -1649,6 +1837,7 @@ function AdminSidebar({
                   className={view === item.id ? "active" : ""}
                   onClick={() => {
                     onChange(item.id)
+
                     onClose()
                   }}
                 >
@@ -1675,6 +1864,7 @@ function AdminSidebar({
           onClick={() =>
             onToast({
               title: "Elena Ruiz",
+
               detail: "Responsable agronómica · elena.ruiz@valleverde.es",
             })
           }
@@ -1693,42 +1883,69 @@ function AdminSidebar({
 
 function AdminTopbar({
   view,
+
   onMenu,
+
   plots,
+
   devices,
+
   users,
+
   rules,
+
   notifications,
+
   onSelectNav,
+
   campaign,
+
   onChangeCampaign,
+
   onMarkNotificationRead,
+
   onMarkAllNotificationsRead,
 }: {
   view: AdminView
+
   onMenu: () => void
+
   plots: Plot[]
+
   devices: DeviceItem[]
+
   users: UserItem[]
+
   rules: RuleItem[]
+
   notifications: SystemNotification[]
+
   onSelectNav: (view: AdminView, targetId?: string) => void
+
   campaign: string
+
   onChangeCampaign: (camp: string) => void
+
   onMarkNotificationRead: (id: string) => void
+
   onMarkAllNotificationsRead: () => void
 }) {
   const [query, setQuery] = useState("")
+
   const [showNotifications, setShowNotifications] = useState(false)
+
   const [showCampaignSelect, setShowCampaignSelect] = useState(false)
 
   const name = adminNav
+
     .flatMap((group) => group.items)
+
     .find((item) => item.id === view)?.label
 
   const unreadCount = notifications.filter((n) => !n.read).length
 
   // Global search filtering
+
   const filteredPlots = query.trim()
     ? plots.filter(
         (p) =>
@@ -1736,6 +1953,7 @@ function AdminTopbar({
           p.crop.toLowerCase().includes(query.toLowerCase()),
       )
     : []
+
   const filteredDevices = query.trim()
     ? devices.filter(
         (d) =>
@@ -1743,6 +1961,7 @@ function AdminTopbar({
           d.plot.toLowerCase().includes(query.toLowerCase()),
       )
     : []
+
   const filteredUsers = query.trim()
     ? users.filter(
         (u) =>
@@ -1750,6 +1969,7 @@ function AdminTopbar({
           u.role.toLowerCase().includes(query.toLowerCase()),
       )
     : []
+
   const filteredRules = query.trim()
     ? rules.filter((r) => r.name.toLowerCase().includes(query.toLowerCase()))
     : []
@@ -1789,8 +2009,11 @@ function AdminTopbar({
                 <div
                   style={{
                     padding: 12,
+
                     fontSize: 11,
+
                     color: "var(--muted)",
+
                     textAlign: "center",
                   }}
                 >
@@ -1806,6 +2029,7 @@ function AdminTopbar({
                       className="search-result-item"
                       onClick={() => {
                         onSelectNav("farms", plot.id)
+
                         setQuery("")
                       }}
                     >
@@ -1827,6 +2051,7 @@ function AdminTopbar({
                       className="search-result-item"
                       onClick={() => {
                         onSelectNav("devices", dev.id)
+
                         setQuery("")
                       }}
                     >
@@ -1847,6 +2072,7 @@ function AdminTopbar({
                       className="search-result-item"
                       onClick={() => {
                         onSelectNav("users", user.id)
+
                         setQuery("")
                       }}
                     >
@@ -1867,6 +2093,7 @@ function AdminTopbar({
                       className="search-result-item"
                       onClick={() => {
                         onSelectNav("rules", rule.id)
+
                         setQuery("")
                       }}
                     >
@@ -1902,6 +2129,7 @@ function AdminTopbar({
                   className="action-menu-item"
                   onClick={() => {
                     onChangeCampaign(c)
+
                     setShowCampaignSelect(false)
                   }}
                 >
@@ -1936,7 +2164,9 @@ function AdminTopbar({
                   <span
                     style={{
                       fontSize: 9,
+
                       color: "var(--muted)",
+
                       display: "block",
                     }}
                   >
@@ -1965,6 +2195,7 @@ function AdminTopbar({
                       <div
                         style={{
                           display: "flex",
+
                           justifyContent: "space-between",
                         }}
                       >
@@ -1976,8 +2207,11 @@ function AdminTopbar({
                       <p
                         style={{
                           margin: 0,
+
                           fontSize: 10,
+
                           color: "var(--muted)",
+
                           lineHeight: 1.4,
                         }}
                       >
@@ -1997,40 +2231,63 @@ function AdminTopbar({
 
 function FarmMap({
   mode,
+
   selected,
+
   onSelect,
+
   plots,
+
   zoom,
 }: {
   mode: string
+
   selected: string
+
   onSelect: (id: string) => void
+
   plots: Plot[]
+
   zoom: number
 }) {
   const positions = [
     {
       id: "p1",
+
       d: "M28 40 L205 20 L247 132 L173 206 L38 175 Z",
+
       labelX: 125,
+
       labelY: 105,
     },
+
     {
       id: "p2",
+
       d: "M253 27 L429 49 L447 178 L305 205 L250 129 Z",
+
       labelX: 348,
+
       labelY: 112,
     },
+
     {
       id: "p3",
+
       d: "M43 186 L172 215 L218 338 L72 368 L24 286 Z",
+
       labelX: 116,
+
       labelY: 278,
     },
+
     {
       id: "p4",
+
       d: "M184 211 L304 214 L438 185 L461 313 L362 379 L222 341 Z",
+
       labelX: 325,
+
       labelY: 290,
     },
   ]
@@ -2042,7 +2299,9 @@ function FarmMap({
         aria-label="Mapa esquemático de parcelas"
         style={{
           transform: `scale(${zoom})`,
+
           transformOrigin: "center center",
+
           transition: "transform 220ms ease",
         }}
       >
@@ -2066,7 +2325,9 @@ function FarmMap({
         />
         {positions.map((position, index) => {
           const plot = plots.find((item) => item.id === position.id)
+
           if (!plot) return null
+
           return (
             <g
               key={position.id}
@@ -2105,24 +2366,39 @@ function FarmMap({
 
 function Overview({
   plots,
+
   alerts,
+
   resolutions,
+
   devices,
+
   onNavigateFarms,
+
   onToast,
+
   onRefreshTelemetry,
 }: {
   plots: Plot[]
+
   alerts: AlertItem[]
+
   resolutions: Record<string, Resolution>
+
   devices: DeviceItem[]
+
   onNavigateFarms: (plotId: string) => void
+
   onToast: (toast: ToastState) => void
+
   onRefreshTelemetry: () => void
 }) {
   const [mode, setMode] = useState("stress")
+
   const [selectedFarm, setSelectedFarm] = useState("Todas las fincas")
+
   const [selectedId, setSelectedId] = useState(plots[0]?.id || "p3")
+
   const [zoom, setZoom] = useState(1)
 
   const filteredPlots =
@@ -2131,10 +2407,13 @@ function Overview({
       : plots.filter((p) => p.owner === selectedFarm)
 
   const selected = plots.find((plot) => plot.id === selectedId) || plots[0]
+
   const activeAlertsCount = alerts.filter((a) => !resolutions[a.id]).length
+
   const connectedDevicesCount = devices.filter(
     (d) => d.status === "Conectado",
   ).length
+
   const totalArea = plots.reduce((acc, p) => acc + p.area, 0).toFixed(1)
 
   return (
@@ -2348,6 +2627,7 @@ function Overview({
               onClick={() =>
                 onToast({
                   title: "Historial de alertas",
+
                   detail: `${alerts.length} alertas registradas en esta campaña.`,
                 })
               }
@@ -2357,6 +2637,7 @@ function Overview({
           </div>
           {alerts.slice(0, 3).map((alert) => {
             const res = resolutions[alert.id]
+
             return (
               <div className="recent-row" key={alert.id}>
                 <div className={`recent-icon ${alert.severity}`}>
@@ -2423,42 +2704,69 @@ function Overview({
 
 function FarmsView({
   plots,
+
   selectedPlotId,
+
   onSelectPlot,
+
   onAddPlot,
+
   onUpdatePlot,
+
   onDeletePlot,
+
   onTriggerIrrigation,
+
   onToast,
 }: {
   plots: Plot[]
+
   selectedPlotId?: string
+
   onSelectPlot: (id: string) => void
+
   onAddPlot: (plot: Omit<Plot, "id" | "trend">) => void
+
   onUpdatePlot: (id: string, updates: Partial<Plot>) => void
+
   onDeletePlot: (id: string) => void
+
   onTriggerIrrigation: (plotId: string, duration: number) => void
+
   onToast: (toast: ToastState) => void
 }) {
   const [selected, setSelected] = useState(
     selectedPlotId || plots[0]?.id || "p1",
   )
+
   const [showAddModal, setShowAddModal] = useState(false)
+
   const [showEditModal, setShowEditModal] = useState(false)
+
   const [showProfileModal, setShowProfileModal] = useState(false)
+
   const [showIrrigateModal, setShowIrrigateModal] = useState(false)
 
   // Add Plot Form state
+
   const [name, setName] = useState("")
+
   const [crop, setCrop] = useState("Aguacate")
+
   const [variety, setVariety] = useState("Hass")
+
   const [area, setArea] = useState(4.5)
+
   const [owner, setOwner] = useState("Finca El Manantial")
+
   const [phase, setPhase] = useState("Crecimiento vegetativo")
+
   const [soil, setSoil] = useState("Franco-arenoso")
+
   const [irrigationSystem, setIrrigationSystem] = useState("Goteo sectorizado")
 
   // Sync selected if parent prop changes
+
   useEffect(() => {
     if (selectedPlotId) setSelected(selectedPlotId)
   }, [selectedPlotId])
@@ -2467,21 +2775,35 @@ function FarmsView({
 
   const handleCreatePlot = (e: React.FormEvent) => {
     e.preventDefault()
+
     onAddPlot({
       name,
+
       crop,
+
       variety,
+
       area: Number(area),
+
       health: 90,
+
       moisture: 45,
+
       phase,
+
       stress: "success",
+
       growth: 70,
+
       owner,
+
       soil,
+
       irrigationSystem,
     })
+
     setShowAddModal(false)
+
     setName("")
   }
 
@@ -2539,7 +2861,9 @@ function FarmsView({
                 </div>
                 <div className="tree-plots">
                   {plots
+
                     .filter((item) => item.owner === farm)
+
                     .map((item) => (
                       <Button
                         key={item.id}
@@ -2547,6 +2871,7 @@ function FarmsView({
                         className={selected === item.id ? "active" : ""}
                         onClick={() => {
                           setSelected(item.id)
+
                           onSelectPlot(item.id)
                         }}
                       >
@@ -2577,9 +2902,13 @@ function FarmsView({
               <div
                 style={{
                   position: "absolute",
+
                   top: 16,
+
                   right: 16,
+
                   display: "flex",
+
                   gap: 8,
                 }}
               >
@@ -2676,7 +3005,9 @@ function FarmsView({
               </div>
               {[
                 ["Humedad óptima de suelo", "38–62%"],
+
                 ["Riesgo fitosanitario", "Modelo preventivo activo"],
+
                 ["Fase fenológica", plot.phase],
               ].map(([ruleLabel, ruleVal]) => (
                 <div key={ruleLabel}>
@@ -2836,10 +3167,14 @@ function FarmsView({
                 onClick={() => {
                   onUpdatePlot(plot.id, {
                     name: plot.name,
+
                     variety: plot.variety,
+
                     area: plot.area,
+
                     phase: plot.phase,
                   })
+
                   setShowEditModal(false)
                 }}
               >
@@ -2860,17 +3195,25 @@ function FarmsView({
             {[
               {
                 name: "Aguacate Subtropical Intensivo v2.4",
+
                 crop: "Aguacate",
+
                 desc: "Optimizado para marcos intensivos, suelo franco y riego de alta frecuencia.",
               },
+
               {
                 name: "Pitaya Riego Deficitario Controlado v1.8",
+
                 crop: "Pitaya",
+
                 desc: "Estimula floración y restringe humedad en periodos de reposo vegetativo.",
               },
+
               {
                 name: "Cítricos y Frutales Valle del Guadalhorce v3.0",
+
                 crop: "Cítricos",
+
                 desc: "Umbrales adaptados a evapotranspiración estival del sur peninsular.",
               },
             ].map((p) => (
@@ -2878,10 +3221,15 @@ function FarmsView({
                 key={p.name}
                 style={{
                   border: "1px solid var(--line)",
+
                   borderRadius: 10,
+
                   padding: 12,
+
                   display: "flex",
+
                   justifyContent: "space-between",
+
                   alignItems: "center",
                 }}
               >
@@ -2890,8 +3238,11 @@ function FarmsView({
                   <p
                     style={{
                       margin: 0,
+
                       fontSize: 10,
+
                       color: "var(--muted)",
+
                       marginTop: 2,
                     }}
                   >
@@ -2903,8 +3254,10 @@ function FarmsView({
                   onClick={() => {
                     onToast({
                       title: "Perfil asignado",
+
                       detail: `Se ha establecido '${p.name}' en ${plot.name}.`,
                     })
+
                     setShowProfileModal(false)
                   }}
                 >
@@ -2934,6 +3287,7 @@ function FarmsView({
                   variant="secondary"
                   onClick={() => {
                     onTriggerIrrigation(plot.id, mins)
+
                     setShowIrrigateModal(false)
                   }}
                 >
@@ -2958,27 +3312,43 @@ function FarmsView({
 
 function UsersView({
   users,
+
   onAddUser,
+
   onUpdateUser,
+
   onDeleteUser,
+
   onToast,
 }: {
   users: UserItem[]
+
   onAddUser: (user: Omit<UserItem, "id" | "initials">) => void
+
   onUpdateUser: (id: string, updates: Partial<UserItem>) => void
+
   onDeleteUser: (id: string) => void
+
   onToast: (toast: ToastState) => void
 }) {
   const [query, setQuery] = useState("")
+
   const [roleFilter, setRoleFilter] = useState("Todos los roles")
+
   const [showForm, setShowForm] = useState(false)
+
   const [editingUser, setEditingUser] = useState<UserItem | null>(null)
+
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null)
 
   // Form states
+
   const [name, setName] = useState("")
+
   const [email, setEmail] = useState("")
+
   const [role, setRole] = useState("Responsable agronómica")
+
   const [farm, setFarm] = useState("Todas")
 
   const filtered = users.filter((user) => {
@@ -2986,23 +3356,33 @@ function UsersView({
       user.name.toLowerCase().includes(query.toLowerCase()) ||
       user.role.toLowerCase().includes(query.toLowerCase()) ||
       user.email.toLowerCase().includes(query.toLowerCase())
+
     const matchesRole =
       roleFilter === "Todos los roles" || user.role === roleFilter
+
     return matchesQuery && matchesRole
   })
 
   const submitNewUser = (e: React.FormEvent) => {
     e.preventDefault()
+
     onAddUser({
       name,
+
       email:
         email || `${name.toLowerCase().replace(/\s+/g, ".")}@valleverde.es`,
+
       role,
+
       farm,
+
       status: "Activo",
     })
+
     setShowForm(false)
+
     setName("")
+
     setEmail("")
   }
 
@@ -3021,13 +3401,19 @@ function UsersView({
         {[
           [
             String(users.filter((u) => u.status === "Activo").length),
+
             "Usuarios activos",
+
             UsersRound,
           ],
+
           ["4", "Roles configurados", ShieldCheck],
+
           [
             String(users.filter((u) => u.status === "Invitado").length),
+
             "Invitaciones pendientes",
+
             Bell,
           ],
         ].map(([value, label, Icon]) => (
@@ -3103,6 +3489,7 @@ function UsersView({
                       className="action-menu-item"
                       onClick={() => {
                         setEditingUser(user)
+
                         setActiveMenuId(null)
                       }}
                     >
@@ -3113,8 +3500,10 @@ function UsersView({
                       onClick={() => {
                         onToast({
                           title: "Invitación reenviada",
+
                           detail: `Correo de acceso enviado a ${user.email}.`,
                         })
+
                         setActiveMenuId(null)
                       }}
                     >
@@ -3126,6 +3515,7 @@ function UsersView({
                         if (window.confirm(`¿Dar de baja a ${user.name}?`)) {
                           onDeleteUser(user.id)
                         }
+
                         setActiveMenuId(null)
                       }}
                     >
@@ -3252,8 +3642,10 @@ function UsersView({
                 onClick={() => {
                   onUpdateUser(editingUser.id, {
                     role: editingUser.role,
+
                     farm: editingUser.farm,
                   })
+
                   setEditingUser(null)
                 }}
               >
@@ -3269,32 +3661,51 @@ function UsersView({
 
 function DevicesView({
   devices,
+
   plots,
+
   onAddDevice,
+
   onPingDevice,
+
   onCalibrateDevice,
+
   onDeleteDevice,
+
   onToast,
 }: {
   devices: DeviceItem[]
+
   plots: Plot[]
+
   onAddDevice: (dev: Omit<DeviceItem, "id"> & { id?: string }) => void
+
   onPingDevice: (id: string) => void
+
   onCalibrateDevice: (id: string, offset: number) => void
+
   onDeleteDevice: (id: string) => void
+
   onToast: (toast: ToastState) => void
 }) {
   const [filter, setFilter] = useState("Todos")
+
   const [showAddModal, setShowAddModal] = useState(false)
+
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null)
+
   const [calibratingDevice, setCalibratingDevice] = useState<DeviceItem | null>(
     null,
   )
+
   const [calOffset, setCalOffset] = useState(0)
 
   // Add Device Form
+
   const [devId, setDevId] = useState("")
+
   const [devType, setDevType] = useState("Sonda de humedad")
+
   const [devPlot, setDevPlot] = useState(plots[0]?.name || "La Umbría")
 
   const shown = devices.filter(
@@ -3302,24 +3713,37 @@ function DevicesView({
   )
 
   const connectedCount = devices.filter((d) => d.status === "Conectado").length
+
   const lowBatteryCount = devices.filter((d) => d.battery < 20).length
+
   const noSignalCount = devices.filter((d) => d.status === "Sin señal").length
+
   const healthPercent = Math.round((connectedCount / devices.length) * 100)
 
   const submitNewDevice = (e: React.FormEvent) => {
     e.preventDefault()
+
     const finalId =
       devId.trim() || `HUM-0${Math.floor(Math.random() * 80 + 30)}`
+
     onAddDevice({
       id: finalId,
+
       type: devType,
+
       plot: devPlot,
+
       battery: 100,
+
       signal: 95,
+
       status: "Conectado",
+
       last: "hace 1 min",
     })
+
     setShowAddModal(false)
+
     setDevId("")
   }
 
@@ -3388,8 +3812,10 @@ function DevicesView({
             variant="secondary"
             onClick={() => {
               devices.forEach((d) => onPingDevice(d.id))
+
               onToast({
                 title: "Red sincronizada",
+
                 detail: "Se ha solicitado telemetría a todas las sondas.",
               })
             }}
@@ -3461,6 +3887,7 @@ function DevicesView({
                       className="action-menu-item"
                       onClick={() => {
                         onPingDevice(device.id)
+
                         setActiveMenuId(null)
                       }}
                     >
@@ -3470,7 +3897,9 @@ function DevicesView({
                       className="action-menu-item"
                       onClick={() => {
                         setCalibratingDevice(device)
+
                         setCalOffset(device.calibrationOffset || 0)
+
                         setActiveMenuId(null)
                       }}
                     >
@@ -3484,6 +3913,7 @@ function DevicesView({
                         ) {
                           onDeleteDevice(device.id)
                         }
+
                         setActiveMenuId(null)
                       }}
                     >
@@ -3585,6 +4015,7 @@ function DevicesView({
               <Button
                 onClick={() => {
                   onCalibrateDevice(calibratingDevice.id, calOffset)
+
                   setCalibratingDevice(null)
                 }}
               >
@@ -3600,42 +4031,69 @@ function DevicesView({
 
 function RulesView({
   rules,
+
   onAddRule,
+
   onToggleRule,
+
   onDeleteRule,
+
   automation,
+
   onToggleAutomation,
+
   securityLimits,
+
   onUpdateSecurityLimits,
+
   onToast,
 }: {
   rules: RuleItem[]
+
   onAddRule: (rule: Omit<RuleItem, "id" | "triggered">) => void
+
   onToggleRule: (id: string) => void
+
   onDeleteRule: (id: string) => void
+
   automation: boolean
+
   onToggleAutomation: () => void
+
   securityLimits: SecurityLimits
+
   onUpdateSecurityLimits: (limits: SecurityLimits) => void
+
   onToast: (toast: ToastState) => void
 }) {
   const [cropFilter, setCropFilter] = useState("Todos los cultivos")
+
   const [showAddModal, setShowAddModal] = useState(false)
+
   const [showLimitsModal, setShowLimitsModal] = useState(false)
+
   const [showProfilesModal, setShowProfilesModal] = useState(false)
 
   // Rule Form state
+
   const [ruleName, setRuleName] = useState("")
+
   const [ruleCrop, setRuleCrop] = useState("Pitaya")
+
   const [condition, setCondition] = useState("Humedad < 32% durante 3 h")
+
   const [severity, setSeverity] = useState<"Crítica" | "Alta" | "Informativa">(
     "Crítica",
   )
+
   const [autoAction, setAutoAction] = useState(true)
 
   // Limits Form state
+
   const [maxTime, setMaxTime] = useState(securityLimits.maxTimePerSector)
+
   const [minPause, setMinPause] = useState(securityLimits.minPauseHours)
+
   const [maxFlow, setMaxFlow] = useState(securityLimits.maxFlowRate)
 
   const shownRules = rules.filter(
@@ -3647,15 +4105,23 @@ function RulesView({
 
   const submitRule = (e: React.FormEvent) => {
     e.preventDefault()
+
     onAddRule({
       name: ruleName,
+
       crop: ruleCrop,
+
       condition,
+
       severity,
+
       active: true,
+
       autoAction,
     })
+
     setShowAddModal(false)
+
     setRuleName("")
   }
 
@@ -3851,8 +4317,11 @@ function RulesView({
             <label
               style={{
                 display: "flex",
+
                 alignItems: "center",
+
                 gap: 8,
+
                 cursor: "pointer",
               }}
             >
@@ -3919,9 +4388,12 @@ function RulesView({
                 onClick={() => {
                   onUpdateSecurityLimits({
                     maxTimePerSector: maxTime,
+
                     minPauseHours: minPause,
+
                     maxFlowRate: maxFlow,
                   })
+
                   setShowLimitsModal(false)
                 }}
               >
@@ -3942,14 +4414,21 @@ function RulesView({
             {[
               {
                 crop: "Aguacate",
+
                 profile: "Perfil Hass Intensivo (Málaga)",
+
                 moisture: "38–60%",
+
                 stress: "> 72% Asfixia radicular | < 35% Estrés hídrico",
               },
+
               {
                 crop: "Pitaya",
+
                 profile: "Perfil Pitaya Roja Subtropical",
+
                 moisture: "30–48%",
+
                 stress: "> 65% Pudrición fúngica | < 28% Marchitamiento",
               },
             ].map((p) => (
@@ -3957,8 +4436,11 @@ function RulesView({
                 key={p.crop}
                 style={{
                   background: "#f7f9f7",
+
                   border: "1px solid var(--line)",
+
                   borderRadius: 10,
+
                   padding: 12,
                 }}
               >
@@ -3986,16 +4468,20 @@ function RulesView({
 
 function AnalyticsView({ onToast }: { onToast: (toast: ToastState) => void }) {
   const [crop, setCrop] = useState("Aguacate")
+
   const [isCalculating, setIsCalculating] = useState(false)
+
   const [waterAdj, setWaterAdj] = useState(0)
+
   const [tempAdj, setTempAdj] = useState(0)
 
   // Dynamic values calculation based on crop and simulation sliders
+
   const baseYield = crop === "Aguacate" ? 186.4 : 72.8
-  const simulatedYield = (
-    baseYield *
-    (1 + waterAdj * 0.005 + tempAdj * 0.008)
-  ).toFixed(1)
+
+  const simulatedYield = (baseYield * (1 + waterAdj * 0.005 + tempAdj * 0.008))
+
+    .toFixed(1)
 
   const baseValues =
     crop === "Aguacate"
@@ -4008,10 +4494,13 @@ function AnalyticsView({ onToast }: { onToast: (toast: ToastState) => void }) {
 
   const recalculate = () => {
     setIsCalculating(true)
+
     setTimeout(() => {
       setIsCalculating(false)
+
       onToast({
         title: "Modelo recalibrado",
+
         detail: `Predicción actualizada para ${crop} con 89% de intervalo de confianza.`,
       })
     }, 800)
@@ -4098,7 +4587,9 @@ function AnalyticsView({ onToast }: { onToast: (toast: ToastState) => void }) {
           <div
             style={{
               display: "flex",
+
               justifyContent: "space-between",
+
               alignItems: "center",
             }}
           >
@@ -4110,6 +4601,7 @@ function AnalyticsView({ onToast }: { onToast: (toast: ToastState) => void }) {
               style={{ fontSize: 10, color: "var(--muted)" }}
               onClick={() => {
                 setWaterAdj(0)
+
                 setTempAdj(0)
               }}
             >
@@ -4184,8 +4676,11 @@ function AnalyticsView({ onToast }: { onToast: (toast: ToastState) => void }) {
           </div>
           {[
             ["Disponibilidad hídrica", "+12%", "positive", 88],
+
             ["Temperatura acumulada", "+6%", "positive", 68],
+
             ["Incidencia fitosanitaria", "−3%", "negative", 31],
+
             ["Carga floral observada", "+9%", "positive", 76],
           ].map(([label, impact, tone, amount]) => (
             <div className="factor-row" key={String(label)}>
@@ -4214,48 +4709,58 @@ function AnalyticsView({ onToast }: { onToast: (toast: ToastState) => void }) {
 
 function ReportsView({
   reports,
+
   onGenerateReport,
+
   onToast,
 }: {
   reports: ReportItem[]
+
   onGenerateReport: (rep: Omit<ReportItem, "id" | "size" | "date">) => void
+
   onToast: (toast: ToastState) => void
 }) {
   const [reportType, setReportType] = useState("Consumo hídrico y eficiencia")
+
   const [farm, setFarm] = useState("Todas las explotaciones")
+
   const [period, setPeriod] = useState("Campaña 2025")
+
   const [format, setFormat] = useState<"PDF" | "XLSX" | "CSV">("PDF")
+
   const [previewingReport, setPreviewingReport] = useState<ReportItem | null>(
     null,
   )
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+
     onGenerateReport({
       name: `${reportType} · ${period}`,
+
       type: reportType,
+
       farm,
+
       period,
+
       format,
     })
+
     onToast({
       title: "Documento generado",
+
       detail: `El informe de ${reportType} ya está listo para descargar.`,
     })
   }
 
   const downloadFile = (rep: ReportItem) => {
-    const content = `INFORME AGRONÓMICO OFICIAL - COOPERATIVA VALLE VERDE\n${rep.name}\nFecha: ${rep.date}\nTipo: ${rep.type}\nExplotación: ${rep.farm}\nPeriodo: ${rep.period}\nFormato: ${rep.format}\n\nResumen ejecutivo:\nSe ha analizado la eficiencia hídrica y trazabilidad de los sectores monitorizados. Todas las lecturas cumplen con el Real Decreto de Nutrición y Uso Sostenible de Suelos.`
-    const blob = new Blob([content], { type: "text/plain;charset=utf-8" })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement("a")
-    a.href = url
-    a.download = `${rep.name.replace(/\s+/g, "_")}.${rep.format.toLowerCase()}`
-    a.click()
-    URL.revokeObjectURL(url)
+    downloadReport(rep)
+
     onToast({
       title: "Descarga iniciada",
-      detail: `Guardando ${rep.name}.${rep.format.toLowerCase()}`,
+
+      detail: `Guardando ${reportFileName(rep)}`,
     })
   }
 
@@ -4373,6 +4878,7 @@ function ReportsView({
               onClick={() =>
                 onToast({
                   title: "Historial de descargas",
+
                   detail: `${reports.length} informes disponibles.`,
                 })
               }
@@ -4424,8 +4930,11 @@ function ReportsView({
                 <p
                   style={{
                     margin: 0,
+
                     fontSize: 10,
+
                     color: "var(--muted)",
+
                     marginTop: 2,
                   }}
                 >
@@ -4494,52 +5003,79 @@ function ReportsView({
 
 function IntegrationsView({
   integrations,
+
   assistanceRequests,
+
   onToggleIntegration,
+
   onAddAssistanceRequest,
+
   onResolveAssistanceRequest,
+
   onToast,
 }: {
   integrations: IntegrationItem[]
+
   assistanceRequests: AssistanceRequest[]
+
   onToggleIntegration: (id: string) => void
+
   onAddAssistanceRequest: (
     req: Omit<AssistanceRequest, "id" | "date" | "status">,
   ) => void
+
   onResolveAssistanceRequest: (id: string) => void
+
   onToast: (toast: ToastState) => void
 }) {
   const [showAssistanceModal, setShowAssistanceModal] = useState(false)
+
   const [configuringIntegration, setConfiguringIntegration] =
     useState<IntegrationItem | null>(null)
 
   // Assistance form
+
   const [issueName, setIssueName] = useState("")
+
   const [provider, setProvider] = useState("SenseField")
+
   const [priority, setPriority] = useState<"Alta" | "Media" | "Baja">("Media")
+
   const [details, setDetails] = useState("")
 
   const submitAssistance = (e: React.FormEvent) => {
     e.preventDefault()
+
     onAddAssistanceRequest({
       name: issueName,
+
       provider,
+
       priority,
+
       details,
     })
+
     setShowAssistanceModal(false)
+
     setIssueName("")
+
     setDetails("")
+
     onToast({
       title: "Solicitud registrada",
+
       detail: `Notificación enviada al soporte de ${provider}.`,
     })
   }
 
   const iconsMap: Record<string, typeof CloudSun> = {
     "AEMET Agro": CloudSun,
+
     "AgroLab Sur": Sprout,
+
     SenseField: Radio,
+
     "Cuaderno Digital": FileBarChart,
   }
 
@@ -4557,6 +5093,7 @@ function IntegrationsView({
       <div className="integration-grid">
         {integrations.map((item) => {
           const Icon = iconsMap[item.name] || Zap
+
           return (
             <div className="integration-card" key={item.id}>
               <div className="integration-top">
@@ -4604,6 +5141,7 @@ function IntegrationsView({
             onClick={() =>
               onToast({
                 title: "Asistencia externa",
+
                 detail: `${assistanceRequests.length} tickets en curso con empresas colaboradoras.`,
               })
             }
@@ -4760,6 +5298,7 @@ function IntegrationsView({
                 onClick={() => {
                   onToast({
                     title: "Conexión verificada",
+
                     detail: `Ping exitoso con los servidores de ${configuringIntegration.name} (200 OK).`,
                   })
                 }}
@@ -4770,8 +5309,10 @@ function IntegrationsView({
                 onClick={() => {
                   onToast({
                     title: "Configuración guardada",
+
                     detail: `Se han actualizado los parámetros de ${configuringIntegration.name}.`,
                   })
+
                   setConfiguringIntegration(null)
                 }}
               >
@@ -4787,120 +5328,220 @@ function IntegrationsView({
 
 function AdminApp({
   onSwitch,
+
   onSwitchBackoffice,
+
   tickets,
+
   onAddTicket,
+
   actuations,
+
   onManualIrrigation,
+
   onResolve,
+
   erpDatasets,
+
   onToggleErpDataset,
+
   onSendErp,
+
   toast,
+
   setToast,
+
   plots,
+
   alerts,
+
   resolutions,
+
   devices,
+
   users,
+
   rules,
+
   notifications,
+
   assistanceRequests,
+
   reports,
+
   integrations,
+
   automation,
+
   onToggleAutomation,
+
   securityLimits,
+
   onUpdateSecurityLimits,
+
   onAddPlot,
+
   onUpdatePlot,
+
   onDeletePlot,
+
   onTriggerIrrigation,
+
   onAddDevice,
+
   onPingDevice,
+
   onCalibrateDevice,
+
   onDeleteDevice,
+
   onAddUser,
+
   onUpdateUser,
+
   onDeleteUser,
+
   onAddRule,
+
   onToggleRule,
+
   onDeleteRule,
+
   onGenerateReport,
+
   onToggleIntegration,
+
   onAddAssistanceRequest,
+
   onResolveAssistanceRequest,
+
   onMarkNotificationRead,
+
   onMarkAllNotificationsRead,
+
   onRefreshTelemetry,
 }: {
   onSwitch: () => void
+
   onSwitchBackoffice: () => void
+
   tickets: SupportTicket[]
+
   onAddTicket: (ticket: Omit<SupportTicket, "id" | "date" | "status">) => void
+
   actuations: ActuationLog[]
+
   onManualIrrigation: (plotId: string, minutes: number) => void
+
   onResolve: (
     alert: AlertItem,
+
     status: "accepted" | "rejected",
+
     reason?: string,
+
     note?: string,
   ) => void
+
   erpDatasets: ErpDataset[]
+
   onToggleErpDataset: (id: string) => void
+
   onSendErp: () => void
+
   toast: ToastState
+
   setToast: (toast: ToastState) => void
+
   plots: Plot[]
+
   alerts: AlertItem[]
+
   resolutions: Record<string, Resolution>
+
   devices: DeviceItem[]
+
   users: UserItem[]
+
   rules: RuleItem[]
+
   notifications: SystemNotification[]
+
   assistanceRequests: AssistanceRequest[]
+
   reports: ReportItem[]
+
   integrations: IntegrationItem[]
+
   automation: boolean
+
   onToggleAutomation: () => void
+
   securityLimits: SecurityLimits
+
   onUpdateSecurityLimits: (limits: SecurityLimits) => void
+
   onAddPlot: (plot: Omit<Plot, "id" | "trend">) => void
+
   onUpdatePlot: (id: string, updates: Partial<Plot>) => void
+
   onDeletePlot: (id: string) => void
+
   onTriggerIrrigation: (plotId: string, duration: number) => void
+
   onAddDevice: (dev: Omit<DeviceItem, "id"> & { id?: string }) => void
+
   onPingDevice: (id: string) => void
+
   onCalibrateDevice: (id: string, offset: number) => void
+
   onDeleteDevice: (id: string) => void
+
   onAddUser: (user: Omit<UserItem, "id" | "initials">) => void
+
   onUpdateUser: (id: string, updates: Partial<UserItem>) => void
+
   onDeleteUser: (id: string) => void
+
   onAddRule: (rule: Omit<RuleItem, "id" | "triggered">) => void
+
   onToggleRule: (id: string) => void
+
   onDeleteRule: (id: string) => void
+
   onGenerateReport: (rep: Omit<ReportItem, "id" | "size" | "date">) => void
+
   onToggleIntegration: (id: string) => void
+
   onAddAssistanceRequest: (
     req: Omit<AssistanceRequest, "id" | "date" | "status">,
   ) => void
+
   onResolveAssistanceRequest: (id: string) => void
+
   onMarkNotificationRead: (id: string) => void
+
   onMarkAllNotificationsRead: () => void
+
   onRefreshTelemetry: () => void
 }) {
   const [view, setView] = useState<AdminView>(() =>
     viewFromPath<AdminView>("admin"),
   )
+
   useEffect(() => syncRoute("admin", view), [view])
+
   const [menuOpen, setMenuOpen] = useState(false)
+
   const [campaign, setCampaign] = useState("Campaña 2025")
+
   const [targetPlotId, setTargetPlotId] = useState<string | undefined>(
     undefined,
   )
 
   const handleSelectNav = (newView: AdminView, targetId?: string) => {
     setView(newView)
+
     if (targetId) setTargetPlotId(targetId)
   }
 
@@ -4943,6 +5584,7 @@ function AdminApp({
               devices={devices}
               onNavigateFarms={(id) => {
                 setTargetPlotId(id)
+
                 setView("farms")
               }}
               onToast={setToast}
@@ -5060,63 +5702,86 @@ export default function App() {
   const [experience, setExperience] = useState<Experience>(
     () => experienceFromPath() ?? readStored("verdant-experience", "field"),
   )
+
   // Navegación atrás/adelante del navegador entre aplicaciones y vistas
+
   const [routeKey, setRouteKey] = useState(0)
+
   useEffect(() => {
     const onPop = () => {
       const fromPath = experienceFromPath()
+
       if (fromPath) setExperience(fromPath)
+
       setRouteKey((key) => key + 1)
     }
+
     window.addEventListener("popstate", onPop)
+
     return () => window.removeEventListener("popstate", onPop)
   }, [])
+
   const [online, setOnlineState] = useState(() =>
     readStored("verdant-online", true),
   )
 
   // Persistent Domain States
+
   const [plots, setPlots] = useState<Plot[]>(() =>
     readStored("verdant-plots", initialPlots),
   )
+
   const [alerts, setAlerts] = useState<AlertItem[]>(() =>
     readStored("verdant-alerts", initialAlerts),
   )
+
   const [resolutions, setResolutions] = useState<Record<string, Resolution>>(
     () => readStored("verdant-resolutions", {}),
   )
+
   const [devices, setDevices] = useState<DeviceItem[]>(() =>
     readStored("verdant-devices", initialDevices),
   )
+
   const [users, setUsers] = useState<UserItem[]>(() =>
     readStored("verdant-users", initialUsers),
   )
+
   const [rules, setRules] = useState<RuleItem[]>(() =>
     readStored("verdant-rules", initialRules),
   )
+
   const [tickets, setTickets] = useState<SupportTicket[]>(() =>
     readStored("verdant-tickets", initialTickets),
   )
+
   const [assistanceRequests, setAssistanceRequests] =
     useState<AssistanceRequest[]>(() =>
       readStored("verdant-assistance", initialAssistanceRequests),
     )
+
   const [reports, setReports] = useState<ReportItem[]>(() =>
     readStored("verdant-reports", initialReports),
   )
+
   const [integrations, setIntegrations] = useState<IntegrationItem[]>(() =>
     readStored("verdant-integrations", initialIntegrations),
   )
+
   const [notifications, setNotifications] = useState<SystemNotification[]>(() =>
     readStored("verdant-notifications", initialNotifications),
   )
+
   const [automation, setAutomation] = useState<boolean>(() =>
     readStored("verdant-automation", false),
   )
+
   const [securityLimits, setSecurityLimits] = useState<SecurityLimits>(() =>
     readStored("verdant-security-limits", {
       maxTimePerSector: 45,
+
       minPauseHours: 4,
+
       maxFlowRate: 8.2,
     }),
   )
@@ -5124,155 +5789,213 @@ export default function App() {
   const [actuations, setActuations] = useState<ActuationLog[]>(() =>
     readStored("verdant-actuations", initialActuations),
   )
+
   const [erpDatasets, setErpDatasets] = useState<ErpDataset[]>(() =>
     readStored("verdant-erp-datasets", initialErpDatasets),
   )
+
   const [toast, setToast] = useState<ToastState>(null)
 
   // LocalStorage synchronizers
+
   useEffect(() => {
     window.localStorage.setItem(
       "verdant-experience",
+
       JSON.stringify(experience),
     )
   }, [experience])
+
   useEffect(() => {
     window.localStorage.setItem("verdant-online", JSON.stringify(online))
   }, [online])
+
   useEffect(() => {
     window.localStorage.setItem("verdant-plots", JSON.stringify(plots))
   }, [plots])
+
   useEffect(() => {
     window.localStorage.setItem("verdant-alerts", JSON.stringify(alerts))
   }, [alerts])
+
   useEffect(() => {
     window.localStorage.setItem(
       "verdant-resolutions",
+
       JSON.stringify(resolutions),
     )
   }, [resolutions])
+
   useEffect(() => {
     window.localStorage.setItem("verdant-devices", JSON.stringify(devices))
   }, [devices])
+
   useEffect(() => {
     window.localStorage.setItem("verdant-users", JSON.stringify(users))
   }, [users])
+
   useEffect(() => {
     window.localStorage.setItem("verdant-rules", JSON.stringify(rules))
   }, [rules])
+
   useEffect(() => {
     window.localStorage.setItem("verdant-tickets", JSON.stringify(tickets))
   }, [tickets])
+
   useEffect(() => {
-    window.localStorage.setItem("verdant-actuations", JSON.stringify(actuations))
+    window.localStorage.setItem(
+      "verdant-actuations",
+      JSON.stringify(actuations),
+    )
   }, [actuations])
+
   useEffect(() => {
     window.localStorage.setItem(
       "verdant-erp-datasets",
+
       JSON.stringify(erpDatasets),
     )
   }, [erpDatasets])
+
   useEffect(() => {
     window.localStorage.setItem(
       "verdant-assistance",
+
       JSON.stringify(assistanceRequests),
     )
   }, [assistanceRequests])
+
   useEffect(() => {
     window.localStorage.setItem("verdant-reports", JSON.stringify(reports))
   }, [reports])
+
   useEffect(() => {
     window.localStorage.setItem(
       "verdant-integrations",
+
       JSON.stringify(integrations),
     )
   }, [integrations])
+
   useEffect(() => {
     window.localStorage.setItem(
       "verdant-notifications",
+
       JSON.stringify(notifications),
     )
   }, [notifications])
+
   useEffect(() => {
     window.localStorage.setItem(
       "verdant-automation",
+
       JSON.stringify(automation),
     )
   }, [automation])
+
   useEffect(() => {
     window.localStorage.setItem(
       "verdant-security-limits",
+
       JSON.stringify(securityLimits),
     )
   }, [securityLimits])
 
   // Connectivity toggle
+
   const setOnline = (value: boolean) => {
     setOnlineState(value)
+
     if (value) {
       const unsynced = Object.values(resolutions).filter(
         (item) => !item.synced,
       ).length
+
       if (unsynced) {
         setResolutions((items) =>
           Object.fromEntries(
             Object.entries(items).map(([id, resolution]) => [
               id,
+
               { ...resolution, synced: true },
             ]),
           ),
         )
+
         setToast({
           title: "Cambios sincronizados",
+
           detail: `${unsynced} actuaciones enviadas correctamente.`,
         })
       } else {
         setToast({
           title: "Conexión recuperada",
+
           detail: "Todos los datos están sincronizados.",
         })
       }
     } else {
       setToast({
         title: "Modo sin conexión activado",
+
         detail: "Puedes seguir trabajando con normalidad.",
       })
     }
   }
 
   // Resolve Alert action
+
   const resolveAlert = (
     alert: AlertItem,
+
     status: "accepted" | "rejected",
+
     reason?: string,
+
     note?: string,
   ) => {
     setResolutions((items) => ({
       ...items,
+
       [alert.id]: { status, reason, note, synced: online, date: "Ahora" },
     }))
 
     // If accepted and is Riego, improve the plot moisture and trend!
+
     if (status === "accepted" && alert.category === "Riego") {
       logActuation({
         plot: plots.find((p) => p.id === alert.plotId)?.name ?? alert.plotId,
+
         action: alert.recommendation,
+
         origin: "Recomendación aceptada",
-        requestedBy: experience === "field" ? "Antonio Pérez (Campo)" : "Elena Ruiz (Responsable agronómica)",
+
+        requestedBy:
+          experience === "field"
+            ? "Antonio Pérez (Campo)"
+            : "Elena Ruiz (Responsable agronómica)",
+
         result: "En curso",
+
         detail: online ? undefined : "Pendiente de sincronizar desde el móvil.",
       })
+
       setPlots((currentPlots) =>
         currentPlots.map((p) => {
           if (p.id === alert.plotId) {
             const newMoisture = Math.min(65, p.moisture + 14)
+
             return {
               ...p,
+
               moisture: newMoisture,
+
               stress: newMoisture > 34 ? "success" : "warning",
+
               trend: [...p.trend.slice(1), newMoisture],
             }
           }
+
           return p
         }),
       )
@@ -5283,6 +6006,7 @@ export default function App() {
         status === "accepted"
           ? "Actuación aceptada"
           : "Recomendación rechazada",
+
       detail: online
         ? "La trazabilidad y los sensores se han actualizado."
         : "El cambio se sincronizará al recuperar cobertura.",
@@ -5290,25 +6014,39 @@ export default function App() {
   }
 
   // Plot CRUD Actions
+
   const addPlot = (newPlot: Omit<Plot, "id" | "trend">) => {
     const id = `p${plots.length + 1}`
+
     const baseMoisture = newPlot.moisture || 44
+
     const newEntry: Plot = {
       ...newPlot,
+
       id,
+
       trend: [
         baseMoisture - 3,
+
         baseMoisture - 1,
+
         baseMoisture + 2,
+
         baseMoisture,
+
         baseMoisture + 1,
+
         baseMoisture - 2,
+
         baseMoisture,
       ],
     }
+
     setPlots((items) => [...items, newEntry])
+
     setToast({
       title: "Parcela creada",
+
       detail: `${newPlot.name} se ha añadido a ${newPlot.owner}.`,
     })
   }
@@ -5317,17 +6055,22 @@ export default function App() {
     setPlots((items) =>
       items.map((p) => (p.id === id ? { ...p, ...updates } : p)),
     )
+
     setToast({
       title: "Parcela actualizada",
+
       detail: "Los cambios se han guardado correctamente.",
     })
   }
 
   const deletePlot = (id: string) => {
     const target = plots.find((p) => p.id === id)
+
     setPlots((items) => items.filter((p) => p.id !== id))
+
     setToast({
       title: "Parcela eliminada",
+
       detail: `${target?.name || "La parcela"} ha sido retirada del sistema.`,
     })
   }
@@ -5336,9 +6079,12 @@ export default function App() {
     setActuations((items) => [
       {
         ...entry,
+
         id: `act-${109 + items.length - initialActuations.length}`,
+
         date: "Ahora",
       },
+
       ...items,
     ])
   }
@@ -5346,43 +6092,61 @@ export default function App() {
   const triggerIrrigation = (plotId: string, durationMinutes: number) => {
     logActuation({
       plot: plots.find((p) => p.id === plotId)?.name ?? plotId,
+
       action: `Riego manual · ${durationMinutes} min`,
+
       origin: "Manual",
+
       requestedBy: "Elena Ruiz (Responsable agronómica)",
+
       result: "Confirmada",
+
       detail: automation
         ? "Orden manual con prioridad sobre la automatización activa."
         : undefined,
     })
+
     setPlots((items) =>
       items.map((p) => {
         if (p.id === plotId) {
           const newMoisture = Math.min(
             68,
+
             p.moisture + Math.round(durationMinutes * 0.35),
           )
+
           return {
             ...p,
+
             moisture: newMoisture,
+
             stress: "success",
+
             trend: [...p.trend.slice(1), newMoisture],
           }
         }
+
         return p
       }),
     )
+
     setToast({
       title: "Riego ejecutado",
+
       detail: `Ciclo de ${durationMinutes} min completado. La humedad del suelo ha aumentado.`,
     })
   }
 
   // Device CRUD Actions
+
   const addDevice = (newDev: Omit<DeviceItem, "id"> & { id?: string }) => {
     const id = newDev.id || `DEV-${Math.floor(Math.random() * 800 + 100)}`
+
     setDevices((items) => [{ ...newDev, id }, ...items])
+
     setToast({
       title: "Dispositivo registrado",
+
       detail: `${id} vinculado a ${newDev.plot}.`,
     })
   }
@@ -5393,15 +6157,20 @@ export default function App() {
         d.id === id
           ? {
               ...d,
+
               status: "Conectado",
+
               signal: Math.floor(Math.random() * 15 + 85),
+
               last: "hace 1 min",
             }
           : d,
       ),
     )
+
     setToast({
       title: "Respuesta de sensor",
+
       detail: `Dispositivo ${id} conectado con señal óptima.`,
     })
   }
@@ -5410,8 +6179,10 @@ export default function App() {
     setDevices((items) =>
       items.map((d) => (d.id === id ? { ...d, calibrationOffset: offset } : d)),
     )
+
     setToast({
       title: "Sensor calibrado",
+
       detail: `Offset de ${
         offset > 0 ? `+${offset}` : offset
       }% aplicado a ${id}.`,
@@ -5420,24 +6191,36 @@ export default function App() {
 
   const deleteDevice = (id: string) => {
     setDevices((items) => items.filter((d) => d.id !== id))
+
     setToast({
       title: "Dispositivo eliminado",
+
       detail: `El sensor ${id} se ha dado de baja de la red.`,
     })
   }
 
   // User CRUD Actions
+
   const addUser = (newUser: Omit<UserItem, "id" | "initials">) => {
     const id = `u${users.length + 1}`
+
     const initials = newUser.name
+
       .split(" ")
+
       .map((part) => part[0])
+
       .join("")
+
       .toUpperCase()
+
       .slice(0, 2)
+
     setUsers((items) => [...items, { ...newUser, id, initials }])
+
     setToast({
       title: "Usuario añadido",
+
       detail: `Se ha invitado a ${newUser.name} como ${newUser.role}.`,
     })
   }
@@ -5446,30 +6229,40 @@ export default function App() {
     setUsers((items) =>
       items.map((u) => (u.id === id ? { ...u, ...updates } : u)),
     )
+
     setToast({
       title: "Usuario actualizado",
+
       detail: "Permisos y explotación actualizados.",
     })
   }
 
   const deleteUser = (id: string) => {
     const target = users.find((u) => u.id === id)
+
     setUsers((items) => items.filter((u) => u.id !== id))
+
     setToast({
       title: "Usuario eliminado",
+
       detail: `${target?.name || "El usuario"} ha sido retirado.`,
     })
   }
 
   // Rules Actions
+
   const addRule = (newRule: Omit<RuleItem, "id" | "triggered">) => {
     const id = `r${rules.length + 1}`
+
     setRules((items) => [
       ...items,
+
       { ...newRule, id, triggered: "Recién creada" },
     ])
+
     setToast({
       title: "Regla creada",
+
       detail: `'${newRule.name}' ya está activa en el motor agronómico.`,
     })
   }
@@ -5482,17 +6275,22 @@ export default function App() {
 
   const deleteRule = (id: string) => {
     setRules((items) => items.filter((r) => r.id !== id))
+
     setToast({
       title: "Regla eliminada",
+
       detail: "La regla se ha desinstalado del sistema.",
     })
   }
 
   const toggleAutomation = () => {
     const nextState = !automation
+
     setAutomation(nextState)
+
     setToast({
       title: nextState ? "Automatización autorizada" : "Automatización pausada",
+
       detail: nextState
         ? "Las reglas críticas podrán dosificar riegos dentro de los límites de seguridad."
         : "Las actuaciones volverán a requerir aprobación humana.",
@@ -5500,17 +6298,23 @@ export default function App() {
   }
 
   // Support & Assistance Actions
+
   const addTicket = (
     newTicket: Omit<SupportTicket, "id" | "date" | "status">,
   ) => {
     const id = `VV-${1042 + tickets.length}`
+
     setTickets((items) => [
       {
         ...newTicket,
+
         id,
+
         date: "Hoy",
+
         status: online ? "Abierto" : "Pendiente de envío",
       },
+
       ...items,
     ])
   }
@@ -5521,9 +6325,12 @@ export default function App() {
         t.id === id
           ? {
               ...t,
+
               status: close ? "Resuelto" : "En revisión",
+
               replies: [
                 ...(t.replies ?? []),
+
                 { from: "Soporte NEUTRON", text, time: "Ahora" },
               ],
             }
@@ -5542,8 +6349,10 @@ export default function App() {
     setErpDatasets((items) =>
       items.map((d) => (d.enabled ? { ...d, lastSent: "Ahora" } : d)),
     )
+
     setToast({
       title: "Datos enviados al ERP",
+
       detail: `${erpDatasets.filter((d) => d.enabled).length} conjuntos de datos compartidos.`,
     })
   }
@@ -5552,13 +6361,18 @@ export default function App() {
     req: Omit<AssistanceRequest, "id" | "date" | "status">,
   ) => {
     const id = `ast-${assistanceRequests.length + 1}`
+
     setAssistanceRequests((items) => [
       {
         ...req,
+
         id,
+
         date: "Hoy",
+
         status: "En curso",
       },
+
       ...items,
     ])
   }
@@ -5567,45 +6381,60 @@ export default function App() {
     setAssistanceRequests((items) =>
       items.map((r) => (r.id === id ? { ...r, status: "Resuelta" } : r)),
     )
+
     setToast({
       title: "Incidencia resuelta",
+
       detail: "La solicitud de asistencia externa ha concluido.",
     })
   }
 
   // Reports Actions
+
   const generateReport = (rep: Omit<ReportItem, "id" | "size" | "date">) => {
     const id = `rep-${reports.length + 1}`
+
     const size = rep.format === "PDF" ? "2,7 MB" : "940 KB"
+
     setReports((items) => [
       {
         ...rep,
+
         id,
+
         size,
+
         date: "Hoy",
       },
+
       ...items,
     ])
   }
 
   // Integrations Actions
+
   const toggleIntegration = (id: string) => {
     setIntegrations((items) =>
       items.map((i) => {
         if (i.id === id) {
           const nextStatus = i.status === "Conectado" ? "Pausado" : "Conectado"
+
           setToast({
             title: `${i.name}: ${nextStatus}`,
+
             detail: `El flujo de sincronización se ha ${nextStatus.toLowerCase()}.`,
           })
+
           return { ...i, status: nextStatus }
         }
+
         return i
       }),
     )
   }
 
   // Notifications Actions
+
   const markNotificationRead = (id: string) => {
     setNotifications((items) =>
       items.map((n) => (n.id === id ? { ...n, read: true } : n)),
@@ -5614,33 +6443,44 @@ export default function App() {
 
   const markAllNotificationsRead = () => {
     setNotifications((items) => items.map((n) => ({ ...n, read: true })))
+
     setToast({
       title: "Avisos actualizados",
+
       detail: "Todos los avisos marcados como leídos.",
     })
   }
 
   // Telemetry Refresh Simulation
+
   const refreshTelemetry = () => {
     setPlots((items) =>
       items.map((p) => {
         const delta = Math.floor(Math.random() * 3) - 1
+
         const newMoisture = Math.max(20, Math.min(80, p.moisture + delta))
+
         return {
           ...p,
+
           moisture: newMoisture,
+
           trend: [...p.trend.slice(1), newMoisture],
         }
       }),
     )
+
     setDevices((items) =>
       items.map((d) => ({
         ...d,
+
         last: "hace 1 min",
       })),
     )
+
     setToast({
       title: "Telemetría sincronizada",
+
       detail:
         "Lecturas en directo actualizadas desde todas las sondas de campo.",
     })
