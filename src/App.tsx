@@ -105,6 +105,7 @@ import {
   SupportAdminView,
 } from "./adminExtras"
 import BackofficeApp from "./backoffice"
+import { downloadReport, reportFileName } from "./reportExport"
 import {
   experienceFromPath,
   syncRoute,
@@ -4245,17 +4246,10 @@ function ReportsView({
   }
 
   const downloadFile = (rep: ReportItem) => {
-    const content = `INFORME AGRONÓMICO OFICIAL - COOPERATIVA VALLE VERDE\n${rep.name}\nFecha: ${rep.date}\nTipo: ${rep.type}\nExplotación: ${rep.farm}\nPeriodo: ${rep.period}\nFormato: ${rep.format}\n\nResumen ejecutivo:\nSe ha analizado la eficiencia hídrica y trazabilidad de los sectores monitorizados. Todas las lecturas cumplen con el Real Decreto de Nutrición y Uso Sostenible de Suelos.`
-    const blob = new Blob([content], { type: "text/plain;charset=utf-8" })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement("a")
-    a.href = url
-    a.download = `${rep.name.replace(/\s+/g, "_")}.${rep.format.toLowerCase()}`
-    a.click()
-    URL.revokeObjectURL(url)
+    downloadReport(rep)
     onToast({
       title: "Descarga iniciada",
-      detail: `Guardando ${rep.name}.${rep.format.toLowerCase()}`,
+      detail: `Guardando ${reportFileName(rep)}`,
     })
   }
 
