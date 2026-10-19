@@ -1,4 +1,4 @@
-import { Check, Leaf, X } from "lucide-react"
+import { Check, X } from "lucide-react"
 import { ReactNode, useEffect } from "react"
 import type { Severity } from "./data"
 
@@ -43,9 +43,7 @@ export function Textarea(props: React.TextareaHTMLAttributes<HTMLTextAreaElement
 export function Logo({ compact = false }: { compact?: boolean }) {
   return (
     <div className="logo-wrap">
-      <div className="logo-mark">
-        <Leaf size={compact ? 18 : 21} strokeWidth={2.4} />
-      </div>
+      <img className="logo-mark" src="/logo-neutron.svg" alt="Neutron AgriTech" />
       {!compact && (
         <div>
           <div className="logo-name">Neutron</div>
