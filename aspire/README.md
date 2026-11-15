@@ -47,7 +47,21 @@ Se levantan cuatro contenedores en la misma red. El único punto de entrada es *
 | `api` | API de demo con el simulador |
 | `dashboard` | Dashboard de Aspire en modo independiente (http://localhost:18888), recibe la telemetría por OTLP |
 
-Si lo despliegas en un servidor, arranca con `DASHBOARD_PUBLIC_URL=http://<servidor>:18888 docker compose up -d --build` para que `/dashboard` redirija bien.
+Los puertos del host se pueden cambiar con `GATEWAY_PORT` (8080 por defecto) y `DASHBOARD_PORT` (18888).
+
+### En Dokploy
+
+En la pestaña *Environment* de la app de compose:
+
+```
+GATEWAY_PORT=8090
+DASHBOARD_PORT=18890
+DASHBOARD_PUBLIC_URL=http://<ip-o-dominio>:18890
+```
+
+Usa cualquier puerto libre del servidor. Si prefieres un dominio, en *Domains* añade uno con el servicio `gateway` y el puerto `8080`, y otro con el servicio `dashboard` y el puerto `18888`. En ese caso `DASHBOARD_PUBLIC_URL` debe ser la URL pública del dashboard.
+
+Si lo despliegas en otro servidor, arranca con `DASHBOARD_PUBLIC_URL=http://<servidor>:18888 docker compose up -d --build` para que `/dashboard` redirija bien.
 El dashboard está sin login, así que no lo dejes expuesto a internet más allá de la demo.
 
 ## Proyectos
