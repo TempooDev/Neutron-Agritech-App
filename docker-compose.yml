@@ -1,6 +1,6 @@
 # Demo de Neutron con Docker Compose (sin Aspire ni .NET instalados).
 #   docker compose up --build
-# Luego abre http://localhost:8080  (portada · /campo · /panel · /backoffice · /api · /dashboard)
+# Luego abre http://localhost:8080 (o el puerto de GATEWAY_PORT)  (portada · /campo · /panel · /backoffice · /api · /dashboard)
 name: neutron-demo
 
 services:
@@ -46,8 +46,10 @@ services:
       DASHBOARD_URL: ${DASHBOARD_PUBLIC_URL:-http://localhost:18888}
       OTEL_EXPORTER_OTLP_ENDPOINT: http://dashboard:18889
       OTEL_SERVICE_NAME: gateway
+    # Puerto del host configurable (en Dokploy suele estar ocupado el 8080).
+    # Si publicas con un dominio de Dokploy, apúntalo a este servicio en el puerto 8080.
     ports:
-      - "8080:8080"
+      - "${GATEWAY_PORT:-8080}:8080"
     depends_on:
       api:
         condition: service_healthy
@@ -63,5 +65,5 @@ services:
       DASHBOARD__FRONTEND__AUTHMODE: Unsecured
       DASHBOARD__OTLP__AUTHMODE: Unsecured
     ports:
-      - "18888:18888"
+      - "${DASHBOARD_PORT:-18888}:18888"
     restart: unless-stopped
