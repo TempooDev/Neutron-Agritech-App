@@ -1,0 +1,67 @@
+# Demo de Neutron con Docker Compose (sin Aspire ni .NET instalados).
+#   docker compose up --build
+# Luego abre http://localhost:8080  (portada · /campo · /panel · /backoffice · /api · /dashboard)
+name: neutron-demo
+
+services:
+  # API de demo: finca semilla, simulador de sensores, reglas, escenarios e impacto.
+  api:
+    build:
+      context: ./aspire
+      dockerfile: Dockerfile
+      args:
+        PROJECT: Neutron.DemoApi
+    environment:
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://dashboard:18889
+      OTEL_SERVICE_NAME: neutron-api
+      ASPNETCORE_URLS: http://+:80
+      TZ: Europe/Madrid
+    # Mismos nombres que usa Aspire, así el gateway funciona sin cambiar su configuración.
+    networks:
+      default:
+        aliases: [neutron-api]
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/80 && printf \"GET /health HTTP/1.0\\r\\n\\r\\n\" >&3 && grep -q Healthy <&3'"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  # Frontend estático (Vite + nginx) con las apps /campo, /panel y /backoffice.
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+
+  # Gateway YARP: único punto de entrada.
+  gateway:
+    build:
+      context: ./aspire
+      dockerfile: Dockerfile
+      args:
+        PROJECT: Neutron.Gateway
+    environment:
+      # URL del dashboard tal como la ve el navegador (cámbiala si lo despliegas en un servidor).
+      DASHBOARD_URL: ${DASHBOARD_PUBLIC_URL:-http://localhost:18888}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://dashboard:18889
+      OTEL_SERVICE_NAME: gateway
+    ports:
+      - "8080:8080"
+    depends_on:
+      api:
+        condition: service_healthy
+      web:
+        condition: service_started
+    restart: unless-stopped
+
+  # Dashboard de Aspire en modo independiente: métricas de los sensores, trazas y logs.
+  dashboard:
+    image: mcr.microsoft.com/dotnet/aspire-dashboard:13.6.5
+    environment:
+      # Solo para la demo: sin login. No exponer así en un servidor público.
+      DASHBOARD__FRONTEND__AUTHMODE: Unsecured
+      DASHBOARD__OTLP__AUTHMODE: Unsecured
+    ports:
+      - "18888:18888"
+    restart: unless-stopped

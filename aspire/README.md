@@ -30,6 +30,26 @@ La primera vez instala las dependencias de pnpm automáticamente.
 El dashboard de Aspire está en http://localhost:15180 y, solo para la demo, no pide token de acceso
 (`ASPIRE_DASHBOARD_UNSECURED_ALLOW_ANONYMOUS` en `Neutron.AppHost/Properties/launchSettings.json`).
 
+## Con Docker Compose (sin .NET ni Node)
+
+Para desplegarlo o probarlo en cualquier máquina con Docker, desde la raíz del repo:
+
+```bash
+docker compose up --build
+```
+
+Se levantan cuatro contenedores en la misma red. El único punto de entrada es **http://localhost:8080**, con las mismas rutas que arriba: portada, `/campo`, `/panel`, `/backoffice`, `/api` y `/dashboard`.
+
+| Servicio | Qué es |
+| --- | --- |
+| `gateway` | YARP en el puerto 8080 |
+| `web` | Build estático de Vite servido con nginx |
+| `api` | API de demo con el simulador |
+| `dashboard` | Dashboard de Aspire en modo independiente (http://localhost:18888), recibe la telemetría por OTLP |
+
+Si lo despliegas en un servidor, arranca con `DASHBOARD_PUBLIC_URL=http://<servidor>:18888 docker compose up -d --build` para que `/dashboard` redirija bien.
+El dashboard está sin login, así que no lo dejes expuesto a internet más allá de la demo.
+
 ## Proyectos
 
 - `Neutron.AppHost`: orquesta la API, el frontend de Vite (raíz del repo) y el gateway.
