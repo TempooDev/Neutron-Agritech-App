@@ -1,0 +1,6 @@
+node_modules/
+dist/
+.git/
+aspire/
+.figma/design-context/
+*.log

@@ -1,0 +1,19 @@
+<Project Sdk="Aspire.AppHost.Sdk/13.6.5">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <!-- Usamos los paquetes NuGet del dashboard/DCP para que funcione con un simple `dotnet run`. -->
+    <NoWarn>$(NoWarn);ASPIRE010</NoWarn>
+    <UserSecretsId>neutron-apphost-9c1f2b7e</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.JavaScript" Version="13.6.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Neutron.DemoApi\Neutron.DemoApi.csproj" />
+    <ProjectReference Include="..\Neutron.Gateway\Neutron.Gateway.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -5,6 +5,14 @@ import path from "node:path"
 
 import siteConfiguration from "./.figma/make/site.json" with { type: "json" }
 
+// URL de la API de demo inyectada por el AppHost de Aspire (aspire/Neutron.AppHost).
+function apiProxy() {
+  const target =
+    process.env.NEUTRON_API_URL ??
+    process.env["services__neutron-api__http__0"]
+  return target ? { "/api": { target, changeOrigin: true } } : undefined
+}
+
 // Vite config — https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   // .figma/make/deploy-preview passes `--mode development` for cached-preview builds.
@@ -38,6 +46,8 @@ export default defineConfig(({ mode }) => {
       watch: {
         ignored: ["**/.figma/**"],
       },
+      // Con Aspire, /api se redirige a la API de demo (simulador de sensores).
+      proxy: apiProxy(),
     },
     preview: {
       host: process.env.FIGMA_DEV_SERVER_HOST || "0.0.0.0",

@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="Neutron.AppHost/Neutron.AppHost.csproj" />
+  <Project Path="Neutron.DemoApi/Neutron.DemoApi.csproj" />
+  <Project Path="Neutron.Gateway/Neutron.Gateway.csproj" />
+  <Project Path="Neutron.ServiceDefaults/Neutron.ServiceDefaults.csproj" />
+</Solution>

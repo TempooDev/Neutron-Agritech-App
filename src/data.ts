@@ -9,6 +9,8 @@ export type Plot = {
   health: number
   moisture: number
   trend: number[]
+  /** Medias diarias de los últimos 30 días (modo demo en vivo). */
+  trend30?: number[]
   phase: string
   stress: Severity
   growth: number
