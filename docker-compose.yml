@@ -12,11 +12,12 @@ services:
       args:
         PROJECT: Neutron.DemoApi
     environment:
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://dashboard:18889
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://neutron-dashboard:18889
       OTEL_SERVICE_NAME: neutron-api
       ASPNETCORE_URLS: http://+:80
       TZ: Europe/Madrid
-    # Mismos nombres que usa Aspire, así el gateway funciona sin cambiar su configuración.
+    # Nombres únicos (los mismos que en Aspire): en la red compartida de Dokploy
+    # puede haber otros contenedores llamados "api" o "web".
     networks:
       default:
         aliases: [neutron-api]
@@ -32,6 +33,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    networks:
+      default:
+        aliases: [neutron-web]
     restart: unless-stopped
 
   # Gateway YARP: único punto de entrada.
@@ -44,10 +48,14 @@ services:
     environment:
       # URL del dashboard tal como la ve el navegador (cámbiala si lo despliegas en un servidor).
       DASHBOARD_URL: ${DASHBOARD_PUBLIC_URL:-http://localhost:18888}
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://dashboard:18889
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://neutron-dashboard:18889
       OTEL_SERVICE_NAME: gateway
+    # Red explícita: si Dokploy añade su red (dokploy-network) para el dominio,
+    # el gateway sigue viendo a neutron-api y neutron-web en la red interna.
+    networks:
+      - default
     # Puerto del host configurable (en Dokploy suele estar ocupado el 8080).
-    # Si publicas con un dominio de Dokploy, apúntalo a este servicio en el puerto 8080.
+    # Con un dominio de Dokploy usa GATEWAY_PORT=127.0.0.1:8090 para no exponer el puerto ni la IP.
     ports:
       - "${GATEWAY_PORT:-8080}:8080"
     depends_on:
@@ -64,6 +72,9 @@ services:
       # Solo para la demo: sin login. No exponer así en un servidor público.
       DASHBOARD__FRONTEND__AUTHMODE: Unsecured
       DASHBOARD__OTLP__AUTHMODE: Unsecured
+    networks:
+      default:
+        aliases: [neutron-dashboard]
     ports:
       - "${DASHBOARD_PORT:-18888}:18888"
     restart: unless-stopped

@@ -51,7 +51,6 @@ static class Portal
     <a class="card" href="/api/snapshot"><span class="tag">API</span><strong>API de la finca</strong>
       <span class="desc">Estado completo en JSON: parcelas, alertas, dispositivos e impacto.</span><code>/api/snapshot</code></a>
   </div>
-  <footer>Dashboard de Aspire: {{dashboardUrl}}</footer>
 </main>
 </body>
 </html>
