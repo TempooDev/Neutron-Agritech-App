@@ -19,3 +19,9 @@ logs/
 # beside it.
 /.plugins/
 /.opencode-skills/
+
+# .NET (aspire/)
+bin/
+obj/
+*.user
+.vs/

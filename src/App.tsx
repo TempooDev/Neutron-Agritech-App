@@ -52,7 +52,10 @@ import {
   XCircle,
   Zap,
 } from "lucide-react"
-import { ReactNode, useEffect, useState } from "react"
+import { ReactNode, useEffect, useRef, useState } from "react"
+import DemoConsole from "./demo/DemoConsole"
+import { DemoSnapshotContext, useDemoSnapshot } from "./demo/context"
+import { useLiveDemo } from "./demo/useLiveDemo"
 import {
   alerts as initialAlerts,
   devices as initialDevices,
@@ -423,7 +426,7 @@ function FieldHome({
           values={
             period === "7 días"
               ? selected.trend
-              : [...selected.trend, 45, 42, 39, 43, 46, 41, 40]
+              : (selected.trend30 ?? [...selected.trend, 45, 42, 39, 43, 46, 41, 40])
           }
           height={110}
           color={selected.moisture < 35 ? "red" : "green"}
@@ -2122,6 +2125,7 @@ function Overview({
   onRefreshTelemetry: () => void
 }) {
   const [mode, setMode] = useState("stress")
+  const live = useDemoSnapshot()
   const [selectedFarm, setSelectedFarm] = useState("Todas las fincas")
   const [selectedId, setSelectedId] = useState(plots[0]?.id || "p3")
   const [zoom, setZoom] = useState(1)
@@ -2175,8 +2179,16 @@ function Overview({
         <KpiCard
           icon={<Droplets />}
           label="AHORRO DE AGUA"
-          value="18,4%"
-          delta="+4,2% vs. campaña anterior"
+          value={
+            live
+              ? `${live.impact.waterSavedPct.toLocaleString("es-ES", { maximumFractionDigits: 1 })}%`
+              : "18,4%"
+          }
+          delta={
+            live
+              ? `${live.impact.waterSavedM3.toLocaleString("es-ES")} m³ en ${Math.round(live.impact.simulatedDays)} días`
+              : "+4,2% vs. campaña anterior"
+          }
           tone="blue"
         />
         <KpiCard
@@ -5123,6 +5135,147 @@ export default function App() {
   )
   const [toast, setToast] = useState<ToastState>(null)
 
+  // ---- Modo demo en vivo (API de Aspire o simulador local de respaldo) ----
+  const [demoEnabled, setDemoEnabled] = useState<boolean>(() =>
+    readStored("neutron-demo-enabled", true),
+  )
+  useEffect(() => {
+    window.localStorage.setItem("neutron-demo-enabled", JSON.stringify(demoEnabled))
+  }, [demoEnabled])
+  const live = useLiveDemo(demoEnabled)
+  const liveActive = demoEnabled && live.snapshot !== null
+  const seenAlertIds = useRef<Set<string> | null>(null)
+  const lastRunId = useRef<string | null>(null)
+
+  useEffect(() => {
+    const snap = live.snapshot
+    if (!snap) return
+
+    // Si la simulación se ha reiniciado, olvidamos las resoluciones de la demo anterior.
+    const restarted = lastRunId.current !== null && lastRunId.current !== snap.runId
+    lastRunId.current = snap.runId
+    if (restarted) seenAlertIds.current = null
+
+    setPlots((prev) => {
+      const byId = new globalThis.Map(snap.plots.map((p) => [p.id, p]))
+      const merged = prev.map((p) => {
+        const s = byId.get(p.id)
+        if (!s) return p
+        byId.delete(p.id)
+        return {
+          ...p,
+          moisture: s.moisture,
+          health: s.health,
+          growth: s.growth,
+          stress: s.stress,
+          trend: s.trend,
+          trend30: s.trend30,
+        }
+      })
+      const missing = [...byId.values()].map(
+        (s): Plot => ({
+          id: s.id,
+          name: s.name,
+          crop: s.crop,
+          variety: s.variety,
+          area: s.area,
+          health: s.health,
+          moisture: s.moisture,
+          trend: s.trend,
+          trend30: s.trend30,
+          phase: s.phase,
+          stress: s.stress,
+          growth: s.growth,
+          owner: s.owner,
+        }),
+      )
+      return [...merged, ...missing]
+    })
+
+    setAlerts(
+      snap.alerts.map((a) => ({
+        id: a.id,
+        title: a.title,
+        description: a.description,
+        plotId: a.plotId,
+        severity: a.severity,
+        category: a.category,
+        time: a.time,
+        recommendation: a.recommendation,
+        reading: a.reading,
+      })),
+    )
+
+    setDevices((prev) => {
+      const byId = new globalThis.Map(snap.devices.map((d) => [d.id, d]))
+      const merged = prev.map((d) => {
+        const s = byId.get(d.id)
+        if (!s) return d
+        byId.delete(d.id)
+        return { ...d, battery: s.battery, signal: s.signal, status: s.status, last: s.last, plot: s.plot }
+      })
+      const missing = [...byId.values()].map(
+        (s): DeviceItem => ({
+          id: s.id,
+          type: s.type,
+          plot: s.plot,
+          battery: s.battery,
+          signal: s.signal,
+          status: s.status,
+          last: s.last,
+          calibrationOffset: s.calibrationOffset,
+        }),
+      )
+      return [...merged, ...missing]
+    })
+
+    // Alertas gestionadas desde otro dispositivo (p. ej. el móvil de campo) se reflejan aquí.
+    setResolutions((items) => {
+      const base = restarted ? {} : items
+      const next = { ...base }
+      let changed = restarted
+      for (const a of snap.alerts) {
+        if (a.resolved && !next[a.id]) {
+          next[a.id] = { status: "accepted", synced: true, date: "Ahora" }
+          changed = true
+        }
+      }
+      return changed ? next : items
+    })
+
+    // Avisos y toasts para alertas nuevas.
+    const seen = seenAlertIds.current
+    if (!seen) {
+      seenAlertIds.current = new Set(snap.alerts.map((a) => a.id))
+      return
+    }
+    const fresh = snap.alerts.filter(
+      (a) => !a.resolved && !seen.has(a.id) && a.severity !== "success",
+    )
+    if (fresh.length === 0) return
+    fresh.forEach((a) => seen.add(a.id))
+    const plotName = (id: string) => snap.plots.find((p) => p.id === id)?.name ?? id
+    setNotifications((items) => [
+      ...fresh.map(
+        (a): SystemNotification => ({
+          id: `notif-${a.id}`,
+          title: a.title,
+          message: `${plotName(a.plotId)} · ${a.reading}`,
+          time: "Ahora",
+          type: a.severity,
+          read: false,
+        }),
+      ),
+      ...items,
+    ].slice(0, 30))
+    const critical = fresh.find((a) => a.severity === "critical")
+    if (critical)
+      setToast({
+        title: `Alerta crítica · ${critical.title}`,
+        detail: `${plotName(critical.plotId)}: ${critical.recommendation}.`,
+      })
+  }, [live.snapshot])
+
   // LocalStorage synchronizers
   useEffect(() => {
     window.localStorage.setItem(
@@ -5208,6 +5361,10 @@ export default function App() {
         (item) => !item.synced,
       ).length
       if (unsynced) {
+        if (liveActive)
+          Object.entries(resolutions)
+            .filter(([, r]) => !r.synced)
+            .forEach(([id, r]) => live.resolveAlert(id, r.status, r.reason))
         setResolutions((items) =>
           Object.fromEntries(
             Object.entries(items).map(([id, resolution]) => [
@@ -5245,6 +5402,8 @@ export default function App() {
       ...items,
       [alert.id]: { status, reason, note, synced: online, date: "Ahora" },
     }))
+    // En modo demo la recomendación se ejecuta en el simulador (si hay cobertura).
+    if (liveActive && online) live.resolveAlert(alert.id, status, reason)
 
     // If accepted and is Riego, improve the plot moisture and trend!
     if (status === "accepted" && alert.category === "Riego") {
@@ -5256,7 +5415,7 @@ export default function App() {
         result: "En curso",
         detail: online ? undefined : "Pendiente de sincronizar desde el móvil.",
       })
-      setPlots((currentPlots) =>
+      if (!liveActive) setPlots((currentPlots) =>
         currentPlots.map((p) => {
           if (p.id === alert.plotId) {
             const newMoisture = Math.min(65, p.moisture + 14)
@@ -5348,7 +5507,8 @@ export default function App() {
         ? "Orden manual con prioridad sobre la automatización activa."
         : undefined,
     })
-    setPlots((items) =>
+    if (liveActive) live.irrigate(plotId, durationMinutes)
+    else setPlots((items) =>
       items.map((p) => {
         if (p.id === plotId) {
           const newMoisture = Math.min(
@@ -5616,6 +5776,13 @@ export default function App() {
 
   // Telemetry Refresh Simulation
   const refreshTelemetry = () => {
+    if (liveActive) {
+      setToast({
+        title: "Telemetría en directo",
+        detail: "Las lecturas llegan cada pocos segundos desde el simulador de sensores.",
+      })
+      return
+    }
     setPlots((items) =>
       items.map((p) => {
         const delta = Math.floor(Math.random() * 3) - 1
@@ -5640,8 +5807,13 @@ export default function App() {
     })
   }
 
+  const demoConsole = (
+    <DemoConsole demo={live} enabled={demoEnabled} onToggleEnabled={setDemoEnabled} />
+  )
+
   if (experience === "backoffice")
     return (
+      <>
       <BackofficeApp
         key={routeKey}
         onSwitchAdmin={() => setExperience("admin")}
@@ -5651,9 +5823,13 @@ export default function App() {
         clientTickets={tickets}
         onReplyClientTicket={replyClientTicket}
       />
+      {demoConsole}
+      </>
     )
 
-  return experience === "field" ? (
+  return (
+    <DemoSnapshotContext.Provider value={live.snapshot}>
+    {experience === "field" ? (
     <FieldApp
       key={routeKey}
       online={online}
@@ -5719,5 +5895,8 @@ export default function App() {
       onMarkAllNotificationsRead={markAllNotificationsRead}
       onRefreshTelemetry={refreshTelemetry}
     />
+    )}
+    {demoConsole}
+    </DemoSnapshotContext.Provider>
   )
 }
