@@ -54,12 +54,14 @@ Los puertos del host se pueden cambiar con `GATEWAY_PORT` (8080 por defecto) y `
 En la pestaña *Environment* de la app de compose:
 
 ```
-GATEWAY_PORT=8090
-DASHBOARD_PORT=18890
-DASHBOARD_PUBLIC_URL=http://<ip-o-dominio>:18890
+GATEWAY_PORT=127.0.0.1:8090
+DASHBOARD_PORT=127.0.0.1:18890
+DASHBOARD_PUBLIC_URL=https://iot.tudominio.com
 ```
 
-Usa cualquier puerto libre del servidor. Si prefieres un dominio, en *Domains* añade uno con el servicio `gateway` y el puerto `8080`, y otro con el servicio `dashboard` y el puerto `18888`. En ese caso `DASHBOARD_PUBLIC_URL` debe ser la URL pública del dashboard.
+En *Domains* añade `neutron.tudominio.com` → servicio `gateway`, puerto `8080`, y `iot.tudominio.com` → servicio `dashboard`, puerto `18888`, con HTTPS.
+Con `127.0.0.1:` delante, los puertos solo se abren dentro del servidor: el público entra únicamente por los dominios y nunca ve la IP.
+La portada no muestra ninguna URL interna.
 
 Si lo despliegas en otro servidor, arranca con `DASHBOARD_PUBLIC_URL=http://<servidor>:18888 docker compose up -d --build` para que `/dashboard` redirija bien.
 El dashboard está sin login, así que no lo dejes expuesto a internet más allá de la demo.

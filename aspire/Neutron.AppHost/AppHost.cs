@@ -7,7 +7,7 @@ var api = builder.AddProject<Projects.Neutron_DemoApi>("neutron-api")
 
 // Frontend React + Vite que ya existía en la raíz del repo (apps /campo, /panel y /backoffice).
 // Si se abre directamente, Vite hace de proxy de /api hacia la API (ver vite.config.ts).
-var web = builder.AddViteApp("web", "../..")
+var web = builder.AddViteApp("neutron-web", "../..")
     .WithPnpm()
     .WithReference(api)
     .WaitFor(api)
