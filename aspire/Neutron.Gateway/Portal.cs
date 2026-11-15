@@ -1,7 +1,14 @@
 // Portada del gateway con acceso a cada aplicación de la demo.
 static class Portal
 {
-    public static string Html(string dashboardUrl) => $$"""
+    // Tarjeta del dashboard de Aspire: solo al arrancar con Aspire, no en Docker Compose.
+    const string DashboardCard = """
+    <a class="card iot" href="/dashboard"><span class="tag">IoT</span><strong>Telemetría (Aspire)</strong>
+      <span class="desc">Dashboard con las métricas de los sensores, trazas y logs del simulador y del motor de reglas.</span><code>/dashboard</code></a>
+
+""";
+
+    public static string Html(bool showDashboard) => $$"""
 <!doctype html>
 <html lang="es">
 <head>
@@ -46,9 +53,7 @@ static class Portal
       <span class="desc">Gemelo digital, dispositivos IoT, reglas, modelos e informes para el equipo técnico.</span><code>/panel</code></a>
     <a class="card" href="/backoffice"><span class="tag">Back-office</span><strong>Back-office Neutron</strong>
       <span class="desc">CRM, facturación, compras, inventario de dispositivos y soporte.</span><code>/backoffice</code></a>
-    <a class="card iot" href="/dashboard"><span class="tag">IoT</span><strong>Telemetría (Aspire)</strong>
-      <span class="desc">Dashboard con las métricas de los sensores, trazas y logs del simulador y del motor de reglas.</span><code>/dashboard</code></a>
-    <a class="card" href="/api/snapshot"><span class="tag">API</span><strong>API de la finca</strong>
+{{(showDashboard ? DashboardCard : "")}}    <a class="card" href="/api/snapshot"><span class="tag">API</span><strong>API de la finca</strong>
       <span class="desc">Estado completo en JSON: parcelas, alertas, dispositivos e impacto.</span><code>/api/snapshot</code></a>
   </div>
 </main>
