@@ -38,16 +38,16 @@ Para desplegarlo o probarlo en cualquier máquina con Docker, desde la raíz del
 docker compose up --build
 ```
 
-Se levantan cuatro contenedores en la misma red. El único punto de entrada es **http://localhost:8080**, con las mismas rutas que arriba: portada, `/campo`, `/panel`, `/backoffice`, `/api` y `/dashboard`.
+Se levantan tres contenedores en la misma red. El único punto de entrada es **http://localhost:8080**: portada, `/campo`, `/panel`, `/backoffice` y `/api`.
+El dashboard de Aspire (`/dashboard`) solo está al arrancar con Aspire; en compose no se despliega.
 
 | Servicio | Qué es |
 | --- | --- |
 | `gateway` | YARP en el puerto 8080 |
 | `web` | Build estático de Vite servido con nginx |
 | `api` | API de demo con el simulador |
-| `dashboard` | Dashboard de Aspire en modo independiente (http://localhost:18888), recibe la telemetría por OTLP |
 
-Los puertos del host se pueden cambiar con `GATEWAY_PORT` (8080 por defecto) y `DASHBOARD_PORT` (18888).
+El puerto del host se puede cambiar con `GATEWAY_PORT` (8080 por defecto).
 
 ### En Dokploy
 
@@ -55,23 +55,18 @@ En la pestaña *Environment* de la app de compose:
 
 ```
 GATEWAY_PORT=127.0.0.1:8090
-DASHBOARD_PORT=127.0.0.1:18890
-DASHBOARD_PUBLIC_URL=https://iot.tudominio.com
 ```
 
-En *Domains* añade `neutron.tudominio.com` → servicio `gateway`, puerto `8080`, y `iot.tudominio.com` → servicio `dashboard`, puerto `18888`, con HTTPS.
-Con `127.0.0.1:` delante, los puertos solo se abren dentro del servidor: el público entra únicamente por los dominios y nunca ve la IP.
+En *Domains* añade `neutron.tudominio.com` → servicio `gateway`, puerto `8080`, con HTTPS.
+Con `127.0.0.1:` delante, el puerto solo se abre dentro del servidor: el público entra únicamente por los dominios y nunca ve la IP.
 La portada no muestra ninguna URL interna.
-
-Si lo despliegas en otro servidor, arranca con `DASHBOARD_PUBLIC_URL=http://<servidor>:18888 docker compose up -d --build` para que `/dashboard` redirija bien.
-El dashboard está sin login, así que no lo dejes expuesto a internet más allá de la demo.
 
 ## Proyectos
 
 - `Neutron.AppHost`: orquesta la API, el frontend de Vite (raíz del repo) y el gateway.
 - `Neutron.DemoApi`: finca semilla Valle Verde (4 parcelas, 11 dispositivos, 30 días de historial), simulador
   de clima y balance hídrico, motor de reglas, escenarios e impacto. Envía un snapshot por segundo por SSE (`/api/stream`).
-- `Neutron.Gateway`: YARP. `/api` va a la API, el resto a la web, `/` es la portada y `/dashboard` redirige a Aspire.
+- `Neutron.Gateway`: YARP. `/api` va a la API, el resto a la web, `/` es la portada y, con Aspire, `/dashboard` redirige a su dashboard.
 - `Neutron.ServiceDefaults`: OpenTelemetry, health checks y service discovery.
 
 ## Durante la demo

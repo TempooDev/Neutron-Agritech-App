@@ -1,6 +1,6 @@
 # Demo de Neutron con Docker Compose (sin Aspire ni .NET instalados).
 #   docker compose up --build
-# Luego abre http://localhost:8080 (o el puerto de GATEWAY_PORT)  (portada · /campo · /panel · /backoffice · /api · /dashboard)
+# Luego abre http://localhost:8080 (o el puerto de GATEWAY_PORT)  (portada · /campo · /panel · /backoffice · /api)
 name: neutron-demo
 
 services:
@@ -12,8 +12,6 @@ services:
       args:
         PROJECT: Neutron.DemoApi
     environment:
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://neutron-dashboard:18889
-      OTEL_SERVICE_NAME: neutron-api
       ASPNETCORE_URLS: http://+:80
       TZ: Europe/Madrid
     # Nombres únicos (los mismos que en Aspire): en la red compartida de Dokploy
@@ -45,11 +43,6 @@ services:
       dockerfile: Dockerfile
       args:
         PROJECT: Neutron.Gateway
-    environment:
-      # URL del dashboard tal como la ve el navegador (cámbiala si lo despliegas en un servidor).
-      DASHBOARD_URL: ${DASHBOARD_PUBLIC_URL:-http://localhost:18888}
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://neutron-dashboard:18889
-      OTEL_SERVICE_NAME: gateway
     # Red explícita: si Dokploy añade su red (dokploy-network) para el dominio,
     # el gateway sigue viendo a neutron-api y neutron-web en la red interna.
     networks:
@@ -65,16 +58,3 @@ services:
         condition: service_started
     restart: unless-stopped
 
-  # Dashboard de Aspire en modo independiente: métricas de los sensores, trazas y logs.
-  dashboard:
-    image: mcr.microsoft.com/dotnet/aspire-dashboard:13.6.5
-    environment:
-      # Solo para la demo: sin login. No exponer así en un servidor público.
-      DASHBOARD__FRONTEND__AUTHMODE: Unsecured
-      DASHBOARD__OTLP__AUTHMODE: Unsecured
-    networks:
-      default:
-        aliases: [neutron-dashboard]
-    ports:
-      - "${DASHBOARD_PORT:-18888}:18888"
-    restart: unless-stopped
