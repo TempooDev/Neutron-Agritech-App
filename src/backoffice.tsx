@@ -180,7 +180,7 @@ function CrmView({ onToast }: { onToast: (toast: ToastState) => void }) {
     <div className="admin-page">
       <AdminPageHeading
         title="Clientes y oportunidades"
-        subtitle="Captación, propuestas, contratos y alta de nuevas cooperativas y empresas agrícolas."
+        subtitle="Captación, propuestas, contratos y alta de nuevas empresas agrícolas."
         action={
           <Button onClick={() => setShowLead(true)}>
             <Plus size={17} /> Nuevo cliente potencial
